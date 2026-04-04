@@ -2,6 +2,7 @@ const {
   USER_WEIGHT_DEFAULT,
   SYSTEM_WEIGHT_DEFAULT,
   NEUTRAL_WEIGHT_DEFAULT,
+  DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
   prepareMaterialCreateInput,
@@ -10,6 +11,26 @@ const {
 } = require('./service');
 
 describe('materials service weighting', () => {
+  test('exposes explicit MVP default weight rules for each material origin bucket', () => {
+    expect(DEFAULT_WEIGHT_RULES).toEqual({
+      userProvided: {
+        defaultWeight: USER_WEIGHT_DEFAULT,
+        priority: 'high',
+        sourceKinds: ['upload', 'file', 'text', 'manual', 'url'],
+      },
+      systemGenerated: {
+        defaultWeight: SYSTEM_WEIGHT_DEFAULT,
+        priority: 'low',
+        sourceKinds: ['system', 'base_knowledge', 'generated'],
+        materialTypes: ['base_knowledge'],
+      },
+      unknown: {
+        defaultWeight: NEUTRAL_WEIGHT_DEFAULT,
+        priority: 'normal',
+      },
+    });
+  });
+
   test('assigns a higher default weight to user-provided materials', () => {
     expect(inferDefaultWeight({ sourceKind: 'upload' })).toBe(USER_WEIGHT_DEFAULT);
     expect(inferDefaultWeight({ sourceKind: 'text' })).toBe(USER_WEIGHT_DEFAULT);

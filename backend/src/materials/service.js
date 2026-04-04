@@ -2,8 +2,26 @@ const USER_WEIGHT_DEFAULT = 1.25;
 const SYSTEM_WEIGHT_DEFAULT = 0.75;
 const NEUTRAL_WEIGHT_DEFAULT = 1.0;
 
-const USER_SOURCE_KINDS = new Set(['upload', 'file', 'text', 'manual', 'url']);
-const SYSTEM_SOURCE_KINDS = new Set(['system', 'base_knowledge', 'generated']);
+const DEFAULT_WEIGHT_RULES = Object.freeze({
+  userProvided: {
+    defaultWeight: USER_WEIGHT_DEFAULT,
+    priority: 'high',
+    sourceKinds: ['upload', 'file', 'text', 'manual', 'url'],
+  },
+  systemGenerated: {
+    defaultWeight: SYSTEM_WEIGHT_DEFAULT,
+    priority: 'low',
+    sourceKinds: ['system', 'base_knowledge', 'generated'],
+    materialTypes: ['base_knowledge'],
+  },
+  unknown: {
+    defaultWeight: NEUTRAL_WEIGHT_DEFAULT,
+    priority: 'normal',
+  },
+});
+
+const USER_SOURCE_KINDS = new Set(DEFAULT_WEIGHT_RULES.userProvided.sourceKinds);
+const SYSTEM_SOURCE_KINDS = new Set(DEFAULT_WEIGHT_RULES.systemGenerated.sourceKinds);
 
 function roundWeight(value) {
   return Number.parseFloat(Number(value).toFixed(2));
@@ -88,6 +106,7 @@ module.exports = {
   USER_WEIGHT_DEFAULT,
   SYSTEM_WEIGHT_DEFAULT,
   NEUTRAL_WEIGHT_DEFAULT,
+  DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
   prepareMaterialCreateInput,
