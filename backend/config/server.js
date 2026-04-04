@@ -15,12 +15,16 @@ const userRoutes = require('../src/users/router');
 const outlineRoutes = require('../src/outline/router');
 const questionRoutes = require('../src/questions/router');
 const answerRoutes = require('../src/answers/router');
+const projectRoutes = require('../src/projects/router');
+const materialRoutes = require('../src/materials/router');
 
 // Mount routes
 app.use('/api/users', userRoutes);
 app.use('/api/outline', outlineRoutes);
 app.use('/api/questions', questionRoutes);
 app.use('/api/answers', answerRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/materials', materialRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
