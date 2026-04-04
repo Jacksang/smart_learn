@@ -63,13 +63,14 @@ Rules for use:
   - Closeout note (2026-04-04): D1.1.A-G are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, `docs/POSTGRES_SETUP.md`, and the parent-checklist sync/closeout commits.
 
 ### D1.2 Project and material management
-- [ ] Implement `learning_projects`
-- [ ] Implement `source_materials`
-- [ ] Implement material weighting rules
-- [ ] Implement base knowledge fallback trigger
-- [ ] Save artifact: working routes + tests
+- [x] Implement `learning_projects`
+- [x] Implement `source_materials`
+- [x] Implement material weighting rules
+- [x] Implement base knowledge fallback trigger
+- [x] Save artifact: working routes + tests
 - [ ] Commit and push
   - Progress sync (2026-04-04): D1.2.A-F are complete in `D1.2_PROJECT_AND_MATERIAL_MANAGEMENT_SUBCHECKLIST.md`, including runtime/schema audit notes in `docs/D1.2_RUNTIME_SCHEMA_ALIGNMENT_AUDIT.md`, PostgreSQL-backed `backend/src/projects/*` and `backend/src/materials/*` repository/controller/router modules, material weighting and fallback service coverage, mounted `/api/projects` + `/api/materials` routes, and verified Jest/live PostgreSQL route-flow artifacts.
+  - Parent checkpoint sync (2026-04-04): Marked the D1.2 implementation/artifact checkpoints complete in this parent file after confirming D1.2.A-G evidence exists; only the final D1.2 closeout commit/push remains open.
 
 ### D1.3 Outline generation flow
 - [ ] Implement outline creation endpoint
