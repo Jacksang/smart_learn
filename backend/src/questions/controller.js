@@ -1,12 +1,12 @@
-const Question = require('../../models/Question');
+const { listQuestions, createQuestion } = require('./repository');
 
 exports.listQuestions = async (req, res, next) => {
   try {
-    const filter = { user: req.user.id };
-    if (req.query.outlineId) filter.outline = req.query.outlineId;
-    if (req.query.topic) filter.topic = req.query.topic;
-
-    const questions = await Question.find(filter).sort({ createdAt: -1 });
+    const questions = await listQuestions({
+      userId: req.user.id,
+      outlineId: req.query.outlineId,
+      topic: req.query.topic,
+    });
     return res.status(200).json({ questions });
   } catch (error) {
     return next(error);
@@ -15,9 +15,9 @@ exports.listQuestions = async (req, res, next) => {
 
 exports.createQuestion = async (req, res, next) => {
   try {
-    const question = await Question.create({
-      user: req.user.id,
-      outline: req.body.outline || null,
+    const question = await createQuestion({
+      userId: req.user.id,
+      outlineId: req.body.outline || null,
       topic: req.body.topic,
       type: req.body.type,
       difficulty: req.body.difficulty || 'medium',

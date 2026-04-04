@@ -1,5 +1,12 @@
 const jwt = require('jsonwebtoken');
-const User = require('../../models/User');
+const {
+  findByEmail,
+  findById,
+  createUser,
+  comparePassword,
+  touchLastActive,
+  toPublicProfile,
+} = require('./repository');
 
 function signToken(userId) {
   return jwt.sign(
@@ -13,14 +20,15 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password, age, gradeLevel, subjects, learningStyle, goals } = req.body;
 
-    const existingUser = await User.findOne({ email: email?.toLowerCase() });
+    const normalizedEmail = email?.toLowerCase();
+    const existingUser = await findByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists with this email' });
     }
 
-    const user = await User.create({
+    const user = await createUser({
       name,
-      email,
+      email: normalizedEmail,
       password,
       age,
       gradeLevel,
@@ -29,12 +37,12 @@ exports.register = async (req, res, next) => {
       goals,
     });
 
-    const token = signToken(user._id);
+    const token = signToken(user.id);
 
     return res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: user.getPublicProfile(),
+      user: toPublicProfile(user),
     });
   } catch (error) {
     return next(error);
@@ -49,25 +57,24 @@ exports.login = async (req, res, next) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+    const user = await findByEmail(email.toLowerCase(), { includePassword: true });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const isMatch = await user.comparePassword(password);
+    const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    user.lastActive = new Date();
-    await user.save();
+    await touchLastActive(user.id);
 
-    const token = signToken(user._id);
+    const token = signToken(user.id);
 
     return res.status(200).json({
       message: 'Login successful',
       token,
-      user: user.getPublicProfile(),
+      user: toPublicProfile(user),
     });
   } catch (error) {
     return next(error);
@@ -76,12 +83,12 @@ exports.login = async (req, res, next) => {
 
 exports.getProfile = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    return res.status(200).json({ user: user.getPublicProfile() });
+    return res.status(200).json({ user: toPublicProfile(user) });
   } catch (error) {
     return next(error);
   }

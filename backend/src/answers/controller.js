@@ -1,5 +1,5 @@
-const Answer = require('../../models/Answer');
-const Question = require('../../models/Question');
+const { findById } = require('../questions/repository');
+const { listAnswers, countAttempts, createAnswer } = require('./repository');
 
 function normalize(value) {
   if (Array.isArray(value)) return value.map(String).sort();
@@ -9,9 +9,7 @@ function normalize(value) {
 
 exports.listAnswers = async (req, res, next) => {
   try {
-    const answers = await Answer.find({ user: req.user.id })
-      .populate('question', 'topic type prompt')
-      .sort({ createdAt: -1 });
+    const answers = await listAnswers(req.user.id);
 
     return res.status(200).json({ answers });
   } catch (error) {
@@ -21,23 +19,20 @@ exports.listAnswers = async (req, res, next) => {
 
 exports.submitAnswer = async (req, res, next) => {
   try {
-    const question = await Question.findById(req.body.questionId);
+    const question = await findById(req.body.questionId);
     if (!question) {
       return res.status(404).json({ message: 'Question not found' });
     }
 
     const submitted = normalize(req.body.submittedAnswer);
-    const expected = normalize(question.correctAnswer);
+    const expected = normalize(question.correct_answer);
     const isCorrect = JSON.stringify(submitted) === JSON.stringify(expected);
 
-    const previousAttempts = await Answer.countDocuments({
-      user: req.user.id,
-      question: question._id,
-    });
+    const previousAttempts = await countAttempts(req.user.id, question.id);
 
-    const answer = await Answer.create({
-      user: req.user.id,
-      question: question._id,
+    const answer = await createAnswer({
+      userId: req.user.id,
+      questionId: question.id,
       submittedAnswer: req.body.submittedAnswer,
       isCorrect,
       score: isCorrect ? 100 : 0,
@@ -50,7 +45,7 @@ exports.submitAnswer = async (req, res, next) => {
     return res.status(201).json({
       message: 'Answer submitted',
       answer,
-      correctAnswer: question.correctAnswer,
+      correctAnswer: question.correct_answer,
       explanation: question.explanation,
     });
   } catch (error) {

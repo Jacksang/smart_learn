@@ -1,9 +1,9 @@
-const Outline = require('../../models/Outline');
 const { parseOutlineFile } = require('./parser');
+const { listByUser, createOutline } = require('./repository');
 
 exports.listOutlines = async (req, res, next) => {
   try {
-    const outlines = await Outline.find({ user: req.user.id }).sort({ createdAt: -1 });
+    const outlines = await listByUser(req.user.id);
     return res.status(200).json({ outlines });
   } catch (error) {
     return next(error);
@@ -12,8 +12,8 @@ exports.listOutlines = async (req, res, next) => {
 
 exports.createOutline = async (req, res, next) => {
   try {
-    const outline = await Outline.create({
-      user: req.user.id,
+    const outline = await createOutline({
+      userId: req.user.id,
       courseTitle: req.body.courseTitle,
       subject: req.body.subject,
       sourceType: req.body.sourceType || 'manual',
@@ -37,8 +37,8 @@ exports.uploadOutline = async (req, res, next) => {
 
     const parsed = await parseOutlineFile(req.file.path, req.file.mimetype);
 
-    const outline = await Outline.create({
-      user: req.user.id,
+    const outline = await createOutline({
+      userId: req.user.id,
       courseTitle: req.body.courseTitle || req.file.originalname,
       subject: req.body.subject || 'General',
       sourceType: req.file.mimetype === 'application/pdf' ? 'pdf' : 'text',
