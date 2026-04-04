@@ -249,6 +249,84 @@ paused -> reinforce  on resume if the interruption happened during visible strug
 - Interruptions should preserve emotional continuity: the learner should feel remembered, not reset.
 - State changes caused by interruptions should be visible in session history for debugging and analytics.
 
+## Deferred-question behavior
+
+### Why deferred questions exist
+Deferred questions are the lesson-safe way to handle curiosity without letting the session lose structure. They are useful when a learner asks something that is relevant, interesting, or important, but answering it immediately would break the current teaching sequence.
+
+### When to defer a question
+Defer instead of answering immediately when one or more of these are true:
+- answering requires leaving the current topic or outline step
+- the learner is in the middle of a quiz batch and the answer would contaminate assessment
+- the question is important but long-form, and the current lesson momentum is more valuable
+- the learner is already struggling and an extra branch would increase overload
+- the answer depends on content that will be taught naturally later in the outline
+
+### When not to defer
+Do **not** defer when:
+- the learner is blocked from understanding the current step without the answer
+- the question is a short clarification that keeps momentum intact
+- the learner explicitly says the side-question matters more than the current lesson goal
+
+### Deferred-question lifecycle
+1. **Capture**
+   - save the learner question text, session id, project id, topic id or outline item id, current state, and reason for deferral
+2. **Acknowledge**
+   - tell the learner the question is worth keeping and will be revisited
+3. **Continue current flow**
+   - return the learner to the active instructional atom without switching modes unless struggle signals require it
+4. **Queue for revisit**
+   - place the question in a session parking lot ordered by urgency and relevance
+5. **Revisit**
+   - answer it during a natural breakpoint: end of topic, end of quiz batch, end-of-session summary, or explicit learner request
+6. **Resolve**
+   - mark answered, skipped, merged into another question, or promoted into future lesson content
+
+### Deferred-question priorities
+
+| Priority | Meaning | Typical handling |
+|---|---|---|
+| `blocking` | Actually needed to proceed | Should not stay deferred; answer before continuing |
+| `same_topic` | Relevant to current topic but not needed immediately | Revisit at next checkpoint or end of current step |
+| `next_topic` | Better answered in upcoming material | Link to future outline item and revisit there |
+| `parking_lot` | Useful curiosity, not time-critical | Cover in end-of-session review or dedicated revisit flow |
+
+### Revisit rules
+- The system should surface deferred questions at clear boundaries, not randomly in the middle of a high-focus interaction.
+- Quiz mode should usually revisit deferred questions only **after** the scored batch completes.
+- Review mode is a good place to revisit `same_topic` questions because it naturally supports elaboration.
+- End-of-session summaries should include unresolved deferred questions and suggest whether to answer them next time.
+- If many deferred questions accumulate, the system should group them by topic to avoid fragmented context switching.
+
+### UX language guidance
+Use language that makes deferral feel respectful rather than dismissive. For example:
+- “That’s a good question — I’m parking it so we don’t lose this thread.”
+- “Let’s finish this check first, then come right back to that.”
+- “That belongs to the next concept, so I’ll bring it back when we get there.”
+
+Avoid language that sounds like the learner is being ignored.
+
+### Data and analytics notes
+Recommended deferred-question fields:
+- `id`
+- `learning_session_id`
+- `learning_project_id`
+- `outline_item_id` nullable
+- `topic_ref` or topic label
+- `question_text`
+- `source_state` (`learn`, `review`, `quiz`, `reinforce`)
+- `priority`
+- `deferral_reason`
+- `status` (`open`, `answered`, `skipped`, `merged`)
+- `revisit_trigger` (`after_step`, `after_batch`, `end_of_topic`, `end_of_session`, `manual`)
+- `answered_at`
+
+Useful metrics:
+- deferred questions per session
+- percent resolved in same session
+- common deferral reasons
+- whether high deferral volume correlates with struggle or engagement
+
 ## Initial implementation guidance
 - Implement these four modes as controlled values in session state.
 - Let the backend own mode persistence and transition decisions.
