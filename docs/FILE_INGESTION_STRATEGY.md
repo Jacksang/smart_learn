@@ -3,8 +3,11 @@
 ## Status
 Completed checkpoints in this document:
 - Define MVP support for text / PDF / DOCX / image OCR
+- Define extraction pipeline expectations
+- Define metadata storage rules
+- Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
 
-Remaining checkpoints will extend this document with extraction pipeline expectations, metadata storage rules, and final delivery notes.
+This document is now the delivery artifact for D0.4.
 
 ---
 

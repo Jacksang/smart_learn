@@ -40,7 +40,7 @@ Rules for use:
 - [x] Define MVP support for text / PDF / DOCX / image OCR
 - [x] Define extraction pipeline expectations
 - [x] Define metadata storage rules
-- [ ] Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
+- [x] Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
 - [ ] Commit and push
 
 ### D0.5 Feedback and motivation template catalog
