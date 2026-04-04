@@ -50,6 +50,40 @@ exports.listOutlines = async (req, res, next) => {
   }
 };
 
+exports.getOutlineById = async (req, res, next) => {
+  try {
+    const outline = await outlineService.getOutlineById({
+      userId: req.user.id,
+      outlineId: req.params.id,
+    });
+
+    if (!outline) {
+      return res.status(404).json({ message: 'Outline not found' });
+    }
+
+    return res.status(200).json({ outline });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getOutlineByProject = async (req, res, next) => {
+  try {
+    const outline = await outlineService.getOutlineByProject({
+      userId: req.user.id,
+      projectId: req.params.projectId,
+    });
+
+    if (!outline) {
+      return res.status(404).json({ message: 'Outline not found' });
+    }
+
+    return res.status(200).json({ outline });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 exports.uploadOutline = async (req, res, next) => {
   try {
     if (!req.file) {

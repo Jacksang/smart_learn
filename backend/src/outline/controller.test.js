@@ -1,6 +1,8 @@
 jest.mock('./service', () => ({
   prepareOutlineCreateInput: jest.fn(),
   createOutline: jest.fn(),
+  getOutlineById: jest.fn(),
+  getOutlineByProject: jest.fn(),
 }));
 
 jest.mock('./repository', () => ({
@@ -121,6 +123,53 @@ describe('outline controller', () => {
     expect(repository.listByUser).toHaveBeenCalledWith('user-1', 'project-1');
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ outlines });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('gets an outline by id with nested outline items', async () => {
+    const outline = {
+      id: 'outline-1',
+      outline_items: [{ id: 'item-1', children: [{ id: 'item-2' }] }],
+    };
+    service.getOutlineById.mockResolvedValue(outline);
+
+    const req = {
+      user: { id: 'user-1' },
+      params: { id: 'outline-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getOutlineById(req, res, next);
+
+    expect(service.getOutlineById).toHaveBeenCalledWith({
+      userId: 'user-1',
+      outlineId: 'outline-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ outline });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('gets the current project outline by project id', async () => {
+    const outline = { id: 'outline-9', project_id: 'project-1', outline_items: [] };
+    service.getOutlineByProject.mockResolvedValue(outline);
+
+    const req = {
+      user: { id: 'user-1' },
+      params: { projectId: 'project-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getOutlineByProject(req, res, next);
+
+    expect(service.getOutlineByProject).toHaveBeenCalledWith({
+      userId: 'user-1',
+      projectId: 'project-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ outline });
     expect(next).not.toHaveBeenCalled();
   });
 });

@@ -176,6 +176,66 @@ async function createOutline(payload, deps = {}) {
   });
 }
 
+function buildNestedOutlineItems(items = []) {
+  const itemMap = new Map();
+  const roots = [];
+
+  items.forEach((item) => {
+    itemMap.set(item.id, {
+      ...item,
+      children: [],
+    });
+  });
+
+  items.forEach((item) => {
+    const nestedItem = itemMap.get(item.id);
+
+    if (item.parent_item_id) {
+      const parent = itemMap.get(item.parent_item_id);
+      if (parent) {
+        parent.children.push(nestedItem);
+        return;
+      }
+    }
+
+    roots.push(nestedItem);
+  });
+
+  return roots;
+}
+
+async function getOutlineById(payload, deps = {}) {
+  const repository = deps.repository || require('./repository');
+  const outline = await repository.findByIdForUser(payload.outlineId, payload.userId);
+
+  if (!outline) {
+    return null;
+  }
+
+  const items = await repository.findItemsByOutlineId(outline.id);
+
+  return {
+    ...outline,
+    outline_items: buildNestedOutlineItems(items),
+  };
+}
+
+async function getOutlineByProject(payload, deps = {}) {
+  const repository = deps.repository || require('./repository');
+  const outline = await repository.findCurrentByProjectForUser(payload.projectId, payload.userId);
+
+  if (!outline) {
+    return null;
+  }
+
+  const items = await repository.findItemsByOutlineId(outline.id);
+
+  return {
+    ...outline,
+    outline_items: buildNestedOutlineItems(items),
+  };
+}
+
 async function refreshOutline(payload, deps = {}) {
   const repository = deps.repository || require('./repository');
   const materialsRepository = deps.materialsRepository || require('../materials/repository');
@@ -205,6 +265,9 @@ module.exports = {
   normalizeCreatePayload,
   prepareOutlineCreateInput,
   buildOutlineItemsFromMaterials,
+  buildNestedOutlineItems,
   createOutline,
+  getOutlineById,
+  getOutlineByProject,
   refreshOutline,
 };

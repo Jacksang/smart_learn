@@ -92,6 +92,114 @@ describe('outline service', () => {
     ]);
   });
 
+  test('buildNestedOutlineItems reconstructs a nested outline tree from flat rows', () => {
+    expect(service.buildNestedOutlineItems([
+      {
+        id: 'item-1',
+        parent_item_id: null,
+        title: 'Root',
+        order_index: 0,
+      },
+      {
+        id: 'item-2',
+        parent_item_id: 'item-1',
+        title: 'Child',
+        order_index: 1,
+      },
+      {
+        id: 'item-3',
+        parent_item_id: 'item-2',
+        title: 'Grandchild',
+        order_index: 2,
+      },
+    ])).toEqual([
+      {
+        id: 'item-1',
+        parent_item_id: null,
+        title: 'Root',
+        order_index: 0,
+        children: [
+          {
+            id: 'item-2',
+            parent_item_id: 'item-1',
+            title: 'Child',
+            order_index: 1,
+            children: [
+              {
+                id: 'item-3',
+                parent_item_id: 'item-2',
+                title: 'Grandchild',
+                order_index: 2,
+                children: [],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  test('getOutlineById returns outline metadata with nested items', async () => {
+    const repository = {
+      findByIdForUser: jest.fn().mockResolvedValue({ id: 'outline-1', project_id: 'project-1' }),
+      findItemsByOutlineId: jest.fn().mockResolvedValue([
+        { id: 'item-1', parent_item_id: null, title: 'Root', order_index: 0 },
+        { id: 'item-2', parent_item_id: 'item-1', title: 'Child', order_index: 1 },
+      ]),
+    };
+
+    await expect(service.getOutlineById(
+      { outlineId: 'outline-1', userId: 'user-1' },
+      { repository }
+    )).resolves.toEqual({
+      id: 'outline-1',
+      project_id: 'project-1',
+      outline_items: [
+        {
+          id: 'item-1',
+          parent_item_id: null,
+          title: 'Root',
+          order_index: 0,
+          children: [
+            {
+              id: 'item-2',
+              parent_item_id: 'item-1',
+              title: 'Child',
+              order_index: 1,
+              children: [],
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  test('getOutlineByProject returns the current project outline with nested items', async () => {
+    const repository = {
+      findCurrentByProjectForUser: jest.fn().mockResolvedValue({ id: 'outline-1', project_id: 'project-1' }),
+      findItemsByOutlineId: jest.fn().mockResolvedValue([
+        { id: 'item-1', parent_item_id: null, title: 'Root', order_index: 0 },
+      ]),
+    };
+
+    await expect(service.getOutlineByProject(
+      { projectId: 'project-1', userId: 'user-1' },
+      { repository }
+    )).resolves.toEqual({
+      id: 'outline-1',
+      project_id: 'project-1',
+      outline_items: [
+        {
+          id: 'item-1',
+          parent_item_id: null,
+          title: 'Root',
+          order_index: 0,
+          children: [],
+        },
+      ],
+    });
+  });
+
   test('refreshOutline replaces the current project outline items when materials change', async () => {
     const repository = {
       findCurrentByProjectForUser: jest.fn().mockResolvedValue({ id: 'outline-1' }),

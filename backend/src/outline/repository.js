@@ -186,6 +186,20 @@ async function findById(outlineId) {
   return mapOutlineRow(result.rows[0]);
 }
 
+async function findByIdForUser(outlineId, userId) {
+  const result = await db.query(
+    `SELECT o.${OUTLINE_SELECT}
+     FROM outlines o
+     INNER JOIN learning_projects p ON p.id = o.project_id
+     WHERE o.id = $1
+       AND p.user_id = $2
+     LIMIT 1`,
+    [outlineId, userId]
+  );
+
+  return mapOutlineRow(result.rows[0]);
+}
+
 async function findCurrentByProjectForUser(projectId, userId) {
   const result = await db.query(
     `SELECT o.${OUTLINE_SELECT}
@@ -324,6 +338,7 @@ module.exports = {
   listByUser,
   createOutlineForUser,
   findById,
+  findByIdForUser,
   findCurrentByProjectForUser,
   findItemsByOutlineId,
   updateStatus,
