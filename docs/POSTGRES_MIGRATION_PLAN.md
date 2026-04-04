@@ -6,7 +6,8 @@
 - Checkpoints covered:
   - D1.1.A — persistence strategy decision
   - D1.1.B — runtime retirement plan for Mongo path
-- Scope here: record the PostgreSQL access decision, rationale, current-state findings, Mongo runtime retirement inventory/map, and D1.1 migration boundary
+  - D1.1.C — PostgreSQL bootstrap design
+- Scope here: record the PostgreSQL access decision, rationale, current-state findings, Mongo runtime retirement inventory/map, D1.1 migration boundary, PostgreSQL env/config contract, and the baseline SQL bootstrap structure
 
 ## Decision
 Smart Learn MVP will standardize on **PostgreSQL via direct `pg` access** with **thin per-domain repository modules**.
@@ -347,8 +348,8 @@ Use a backend-local database directory so PostgreSQL artifacts stay close to the
 
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
-- dependency/config update notes
-- setup/bootstrap instructions references
+- dependency/config update notes once `pg` is declared in `package.json` and Mongo-only runtime dependencies are removed where safe
+- setup/bootstrap instructions references once `backend/db/schema/001_baseline.sql`, `backend/db/scripts/apply-sql-file.js`, and their npm script wiring are added
 
 ## Reference documents
 - `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`
