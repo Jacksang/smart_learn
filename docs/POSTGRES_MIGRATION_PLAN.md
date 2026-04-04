@@ -85,10 +85,87 @@ The migration should avoid in D1.1:
 - introducing multiple new data-access layers at once
 - schema complexity beyond what is needed for MVP foundation work
 
+## Exact runtime path changes required to remove Mongo from the active path
+
+### 1. Auth controller cutover
+File: `backend/src/users/controller.js`
+- Replace `const User = require('../../models/User');`
+- Import `backend/src/users/repository.js` helpers instead:
+  - `findByEmail`
+  - `findById`
+  - `createUser`
+  - `comparePassword`
+  - `touchLastActive`
+  - `toPublicProfile`
+- Rewrite runtime calls as follows:
+  - `User.findOne({ email: ... })` → `findByEmail(email)`
+  - `User.create(...)` → `createUser(...)`
+  - `user.comparePassword(password)` → `comparePassword(password, user.password_hash)`
+  - `user.lastActive = new Date(); await user.save();` → `await touchLastActive(user.id)`
+  - `User.findById(req.user.id)` → `findById(req.user.id)`
+  - `user.getPublicProfile()` → `toPublicProfile(user)`
+- Token subject should use PostgreSQL row ids consistently (`user.id`), not Mongoose `_id`.
+
+### 2. Auth middleware cutover
+File: `backend/src/users/middleware.js`
+- Replace `const User = require('../../models/User');`
+- Import `findById` from `backend/src/users/repository.js`
+- Rewrite runtime calls as follows:
+  - `User.findById(decoded.id)` → `findById(decoded.id)`
+  - `req.user = { id: user._id.toString() };` → `req.user = { id: user.id };`
+- Result: JWT auth no longer depends on any Mongoose model instance shape.
+
+### 3. Outline controller cutover
+File: `backend/src/outline/controller.js`
+- Replace `const Outline = require('../../models/Outline');`
+- Import `listByUser` and `createOutline` from `backend/src/outline/repository.js`
+- Rewrite runtime calls as follows:
+  - `Outline.find({ user: req.user.id }).sort({ createdAt: -1 })` → `listByUser(req.user.id)`
+  - both `Outline.create(...)` call sites → `createOutline(...)` with payload keys aligned to repository shape:
+    - `user` → `userId`
+    - `courseTitle`, `subject`, `sourceType`, `sourcePath`, `topics`, `aiSummary`, `status` unchanged except for camelCase-to-repository mapping where required
+- Result: outline list/create/upload flows run entirely through PostgreSQL.
+
+### 4. Question controller cutover
+File: `backend/src/questions/controller.js`
+- Replace `const Question = require('../../models/Question');`
+- Import `listQuestions`, `createQuestion`, and `findById` (if needed later) from `backend/src/questions/repository.js`
+- Rewrite runtime calls as follows:
+  - `Question.find(filter).sort({ createdAt: -1 })` → `listQuestions({ userId: req.user.id, outlineId: req.query.outlineId, topic: req.query.topic })`
+  - `Question.create(...)` → `createQuestion(...)` with repository payload keys:
+    - `user` → `userId`
+    - `outline` → `outlineId`
+    - remaining business fields passed through
+- Result: question read/write path no longer requires the Mongo model layer.
+
+### 5. Answer controller cutover
+File: `backend/src/answers/controller.js`
+- Replace `const Answer = require('../../models/Answer');`
+- Replace `const Question = require('../../models/Question');`
+- Import from repositories instead:
+  - `listAnswers`, `countAttempts`, `createAnswer` from `backend/src/answers/repository.js`
+  - `findById` from `backend/src/questions/repository.js`
+- Rewrite runtime calls as follows:
+  - `Answer.find({ user: req.user.id }).populate(...).sort(...)` → `listAnswers(req.user.id)`
+  - `Question.findById(req.body.questionId)` → `findById(req.body.questionId)`
+  - `Answer.countDocuments({ user: req.user.id, question: question._id })` → `countAttempts(req.user.id, question.id)`
+  - `Answer.create(...)` → `createAnswer(...)` with repository payload keys:
+    - `user` → `userId`
+    - `question` → `questionId`
+    - `submittedAnswer`, `isCorrect`, `score`, `feedback`, `attemptNumber` retained
+  - response payloads should return PostgreSQL row fields (`question.id`, `question.correct_answer`, `question.explanation`) rather than Mongoose document fields.
+- Result: answer submission/listing becomes PostgreSQL-backed and no longer depends on populate/countDocuments behavior.
+
+### 6. Startup-path outcome expected after controller cutover
+Once the five files above are rewired:
+- Active request handling should no longer import anything from `backend/models/*`
+- `backend/server.js` → `backend/config/server.js` → route/controller stack should execute without requiring Mongoose at runtime
+- The Mongo model files may remain temporarily in-tree, but only as dead code pending later D1.1 cleanup
+- After this cutover, dependency cleanup can safely remove `mongoose` from the active runtime manifest in a later checkpoint
+
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
 - Mongo/Mongoose import inventory and retirement map
-- exact runtime path changes required to remove Mongo from the active path
 - environment variable and connection config design
 - schema/bootstrap file layout and migration approach
 - dependency/config update notes
