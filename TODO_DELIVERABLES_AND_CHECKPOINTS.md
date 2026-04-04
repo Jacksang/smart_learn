@@ -60,7 +60,8 @@ Rules for use:
 - [x] Create schema bootstrap or migrations
 - [x] Save artifact: migration files + setup doc
 - [ ] Commit and push
-  - Sync note (2026-04-04): D1.1.A-F are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, and `docs/POSTGRES_SETUP.md`; only the final parent-checkpoint closeout commit remains.
+  - Sync note (2026-04-04): D1.1.A-F are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, and `docs/POSTGRES_SETUP.md`.
+  - Parent checkpoint status (2026-04-04): all non-commit D1.1 parent checkpoints are now explicitly marked done in this file; the only remaining open parent checkpoint is the final D1.1 closeout commit/push.
 
 ### D1.2 Project and material management
 - [ ] Implement `learning_projects`
