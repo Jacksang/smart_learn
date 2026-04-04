@@ -86,6 +86,7 @@ Rules for use:
 - [ ] Support additional batch generation
 - [ ] Save artifact: working routes + tests
 - [ ] Commit and push
+  - Planning note (2026-04-04): Execution broken into `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`, starting with schema/runtime realignment of the existing `backend/src/questions/*` module before adding project-scoped generation endpoints.
 
 ### D1.5 Answers and progress
 - [ ] Implement answer submission
@@ -163,4 +164,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D1.3 via a new outline-generation sub-checklist
+- [ ] Start D1.4.A via `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`
