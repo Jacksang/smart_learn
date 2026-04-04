@@ -208,9 +208,77 @@ Once the five files above are rewired:
 - The Mongo model files may remain temporarily in-tree, but only as dead code pending later D1.1 cleanup
 - After this cutover, dependency cleanup can safely remove `mongoose` from the active runtime manifest in a later checkpoint
 
+## PostgreSQL environment variables and connection config structure
+
+### Environment variable contract for D1.1
+The PostgreSQL bootstrap/config path should standardize on these environment variables:
+
+Required for non-local environments:
+- `DB_HOST` — PostgreSQL host name
+- `DB_PORT` — PostgreSQL port, default `5432`
+- `DB_NAME` — database name
+- `DB_USER` — database user
+- `DB_PASSWORD` — database password
+
+Optional variables for safer runtime defaults and future-proofing:
+- `NODE_ENV` — selects dev/test/production behavior already used elsewhere in the app ecosystem
+- `DB_SSL` — boolean-like flag (`true`/`false`) to enable SSL when deploying outside local development
+- `DB_POOL_MAX` — maximum PostgreSQL pool size if/when pool tuning is exposed
+- `DB_IDLE_TIMEOUT_MS` — idle timeout for pooled connections if/when pool tuning is exposed
+- `DB_CONNECTION_TIMEOUT_MS` — connect timeout if/when pool tuning is exposed
+
+### Environment variable policy
+- Local development may keep fallback defaults in code temporarily during D1.1, but deployed environments should provide explicit `DB_*` values.
+- `DB_PASSWORD` must never be committed; it belongs only in local `.env` files or deployment secret stores.
+- If `DB_SSL=true`, the config module should enable PostgreSQL SSL mode in a deployment-safe way and keep local development defaulted to non-SSL unless explicitly requested.
+- The project should continue using discrete `DB_*` variables for MVP rather than switching to a combined `DATABASE_URL`, because the current runtime already reads discrete keys and the migration scope is to stabilize—not redesign—the config surface.
+
+### Connection config structure
+The shared PostgreSQL config module should keep one exported pool/client entrypoint and one narrow config builder path:
+
+1. Load environment variables through `dotenv` in backend startup/config code.
+2. Normalize config into a single object with this shape:
+   - `user`
+   - `host`
+   - `database`
+   - `password`
+   - `port`
+   - optional `ssl`
+   - optional pool tuning fields (`max`, `idleTimeoutMillis`, `connectionTimeoutMillis`)
+3. Create exactly one shared `pg` `Pool` from that normalized object.
+4. Export thin helpers around the pool:
+   - `query(text, params)`
+   - `pool`
+   - `connect()` or equivalent health-check/bootstrap probe
+
+### Mapping to current code
+Current file: `backend/config/database.js`
+
+Current environment mapping already present:
+- `process.env.DB_USER` -> `user`
+- `process.env.DB_HOST` -> `host`
+- `process.env.DB_NAME` -> `database`
+- `process.env.DB_PASSWORD` -> `password`
+- `process.env.DB_PORT` -> `port`
+
+D1.1 config follow-up should keep this mapping stable while tightening structure around:
+- explicit numeric parsing for `DB_PORT`
+- optional SSL/pool settings
+- clearer separation between config normalization and connectivity probing
+
+### Recommended defaults for MVP
+For local-only MVP development, the existing defaults remain acceptable as temporary bootstrap values:
+- host: `localhost`
+- port: `5432`
+- database/user: `smartlearn`
+
+However, the long-term default policy should be:
+- avoid production fallbacks for credentials
+- prefer failing fast when required non-local variables are missing
+- keep only developer-friendly local defaults where they reduce setup friction without hiding deployment misconfiguration
+
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
-- environment variable and connection config design
 - schema/bootstrap file layout and migration approach
 - dependency/config update notes
 - setup/bootstrap instructions references
