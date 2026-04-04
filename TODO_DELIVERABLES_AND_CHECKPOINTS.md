@@ -14,7 +14,7 @@ Rules for use:
 ## Phase 0 — Planning Artifacts
 
 ### D0.1 PostgreSQL schema spec
-- [ ] Draft schema entities and relationships
+- [x] Draft schema entities and relationships
 - [ ] Define table-by-table columns
 - [ ] Define enums/status fields
 - [ ] Define indexes and MVP scope notes
