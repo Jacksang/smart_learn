@@ -4,6 +4,8 @@ const {
   NEUTRAL_WEIGHT_DEFAULT,
   MIN_USER_MATERIAL_COUNT,
   MIN_USER_MATERIAL_TEXT_CHARS,
+  BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+  BASE_KNOWLEDGE_FALLBACK_RESPONSE,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
@@ -14,6 +16,7 @@ const {
   isSystemGeneratedMaterial,
   isUserMaterialCandidate,
   evaluateBaseKnowledgeFallback,
+  buildBaseKnowledgeFallbackDecision,
 } = require('./service');
 
 describe('materials service weighting', () => {
@@ -221,6 +224,50 @@ describe('materials service weighting', () => {
       reason: null,
       usableUserMaterialCount: 2,
       totalUserTextChars: 200,
+    });
+  });
+
+  test('returns an explicit fallback decision payload for downstream base-knowledge creation', () => {
+    expect(
+      buildBaseKnowledgeFallbackDecision([], { projectId: 'project-123' })
+    ).toEqual({
+      shouldFallback: true,
+      reason: 'missing_user_material',
+      usableUserMaterialCount: 0,
+      totalUserTextChars: 0,
+      decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+      response: {
+        ...BASE_KNOWLEDGE_FALLBACK_RESPONSE,
+        projectId: 'project-123',
+        reason: 'missing_user_material',
+      },
+    });
+  });
+
+  test('returns an explicit continue-with-project-materials decision payload once material is sufficient', () => {
+    expect(
+      buildBaseKnowledgeFallbackDecision(
+        [
+          {
+            sourceKind: 'upload',
+            extracted_text: 'a'.repeat(MIN_USER_MATERIAL_TEXT_CHARS),
+            isActive: true,
+          },
+        ],
+        { projectId: 'project-123' }
+      )
+    ).toEqual({
+      shouldFallback: false,
+      reason: null,
+      usableUserMaterialCount: MIN_USER_MATERIAL_COUNT,
+      totalUserTextChars: MIN_USER_MATERIAL_TEXT_CHARS,
+      decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+      response: {
+        action: 'use_project_materials',
+        decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+        projectId: 'project-123',
+        reason: null,
+      },
     });
   });
 

@@ -3,6 +3,13 @@ const SYSTEM_WEIGHT_DEFAULT = 0.75;
 const NEUTRAL_WEIGHT_DEFAULT = 1.0;
 const MIN_USER_MATERIAL_COUNT = 1;
 const MIN_USER_MATERIAL_TEXT_CHARS = 200;
+const BASE_KNOWLEDGE_FALLBACK_DECISION_POINT = 'project_material_preflight';
+
+const BASE_KNOWLEDGE_FALLBACK_RESPONSE = Object.freeze({
+  action: 'create_base_knowledge',
+  decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+  targetRoute: 'POST /api/projects/:projectId/materials/base-knowledge',
+});
 
 const DEFAULT_WEIGHT_RULES = Object.freeze({
   userProvided: {
@@ -153,12 +160,36 @@ function evaluateBaseKnowledgeFallback(materials = []) {
   };
 }
 
+function buildBaseKnowledgeFallbackDecision(materials = [], options = {}) {
+  const evaluation = evaluateBaseKnowledgeFallback(materials);
+  const projectId = options.projectId ?? null;
+
+  return {
+    ...evaluation,
+    decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+    response: evaluation.shouldFallback
+      ? {
+          ...BASE_KNOWLEDGE_FALLBACK_RESPONSE,
+          projectId,
+          reason: evaluation.reason,
+        }
+      : {
+          action: 'use_project_materials',
+          decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+          projectId,
+          reason: null,
+        },
+  };
+}
+
 module.exports = {
   USER_WEIGHT_DEFAULT,
   SYSTEM_WEIGHT_DEFAULT,
   NEUTRAL_WEIGHT_DEFAULT,
   MIN_USER_MATERIAL_COUNT,
   MIN_USER_MATERIAL_TEXT_CHARS,
+  BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+  BASE_KNOWLEDGE_FALLBACK_RESPONSE,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
@@ -169,4 +200,5 @@ module.exports = {
   isSystemGeneratedMaterial,
   isUserMaterialCandidate,
   evaluateBaseKnowledgeFallback,
+  buildBaseKnowledgeFallbackDecision,
 };
