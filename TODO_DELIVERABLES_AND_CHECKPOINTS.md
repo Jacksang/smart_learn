@@ -26,7 +26,7 @@ Rules for use:
 - [x] Define request/response shapes
 - [x] Define error handling conventions
 - [x] Define MVP vs later endpoints
-- [ ] Save artifact: `docs/API_ENDPOINT_SPEC.md`
+- [x] Save artifact: `docs/API_ENDPOINT_SPEC.md`
 - [ ] Commit and push
 
 ### D0.3 Lesson state machine
