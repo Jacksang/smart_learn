@@ -27,7 +27,7 @@ Rules for use:
 - [x] Define error handling conventions
 - [x] Define MVP vs later endpoints
 - [x] Save artifact: `docs/API_ENDPOINT_SPEC.md`
-- [ ] Commit and push
+- [x] Commit and push
 
 ### D0.3 Lesson state machine
 - [ ] Define Learn / Review / Quiz / Reinforce states
