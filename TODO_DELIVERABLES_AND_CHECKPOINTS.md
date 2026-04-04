@@ -69,6 +69,7 @@ Rules for use:
 - [ ] Implement base knowledge fallback trigger
 - [ ] Save artifact: working routes + tests
 - [ ] Commit and push
+  - Progress sync (2026-04-04): D1.2.A-F are complete in `D1.2_PROJECT_AND_MATERIAL_MANAGEMENT_SUBCHECKLIST.md`, including runtime/schema audit notes in `docs/D1.2_RUNTIME_SCHEMA_ALIGNMENT_AUDIT.md`, PostgreSQL-backed `backend/src/projects/*` and `backend/src/materials/*` repository/controller/router modules, material weighting and fallback service coverage, mounted `/api/projects` + `/api/materials` routes, and verified Jest/live PostgreSQL route-flow artifacts.
 
 ### D1.3 Outline generation flow
 - [ ] Implement outline creation endpoint
