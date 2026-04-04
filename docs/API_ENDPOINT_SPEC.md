@@ -4,8 +4,9 @@
 Completed checkpoints in this document:
 - Map endpoints from schema and product flow
 - Define request/response shapes
+- Define error handling conventions
 
-Remaining checkpoints will extend this document with error handling conventions, MVP/later splits, and final delivery notes.
+Remaining checkpoints will extend this document with MVP/later splits and final delivery notes.
 
 ---
 
@@ -1223,6 +1224,183 @@ Response:
 - IDs should be exposed consistently as string UUIDs.
 - Timestamps should be ISO 8601 UTC strings.
 - Nullable fields should return `null` instead of being omitted when clarity matters to clients.
+
+---
+
+## Error handling conventions
+
+### Standard error envelope
+All non-2xx responses should use a predictable error body:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": []
+  },
+  "meta": {
+    "requestId": "optional-request-id"
+  }
+}
+```
+
+Notes:
+- `code` should be stable and machine-readable.
+- `message` should be concise and safe to show in client UI.
+- `details` should include field-level issues or action context when helpful.
+- `requestId` is optional but strongly recommended for tracing.
+
+### Recommended HTTP status mapping
+- `400 Bad Request` -> malformed JSON, invalid action payload, unsupported filter combinations
+- `401 Unauthorized` -> missing/invalid auth credentials
+- `403 Forbidden` -> authenticated but not allowed to access the resource
+- `404 Not Found` -> project/material/question/session resource does not exist or is not visible to caller
+- `409 Conflict` -> duplicate or state-conflict actions, such as activating an incompatible outline version
+- `422 Unprocessable Entity` -> semantic validation failure, such as invalid enum value or impossible batch size
+- `429 Too Many Requests` -> future rate limiting for generation-heavy endpoints
+- `500 Internal Server Error` -> unexpected server failure
+- `503 Service Unavailable` -> generation/extraction dependency temporarily unavailable
+
+### Error code catalog
+
+#### Authentication errors
+- `AUTH_REQUIRED`
+- `INVALID_CREDENTIALS`
+- `TOKEN_EXPIRED`
+- `TOKEN_INVALID`
+
+#### Validation and payload errors
+- `VALIDATION_ERROR`
+- `INVALID_ENUM_VALUE`
+- `MISSING_REQUIRED_FIELD`
+- `INVALID_FILE_TYPE`
+- `INVALID_BATCH_SIZE`
+- `UNSUPPORTED_OPERATION`
+
+#### Resource and ownership errors
+- `PROJECT_NOT_FOUND`
+- `MATERIAL_NOT_FOUND`
+- `OUTLINE_NOT_FOUND`
+- `OUTLINE_ITEM_NOT_FOUND`
+- `QUESTION_NOT_FOUND`
+- `ANSWER_ATTEMPT_NOT_FOUND`
+- `SESSION_NOT_FOUND`
+- `DEFERRED_QUESTION_NOT_FOUND`
+- `RESOURCE_ACCESS_DENIED`
+
+#### Workflow/state errors
+- `NO_ACTIVE_MATERIALS`
+- `OUTLINE_GENERATION_FAILED`
+- `OUTLINE_REFRESH_BLOCKED`
+- `QUESTION_GENERATION_FAILED`
+- `ANSWER_EVALUATION_FAILED`
+- `PROGRESS_REFRESH_FAILED`
+- `SESSION_ALREADY_COMPLETED`
+- `SESSION_NOT_RESUMABLE`
+- `DEFERRED_QUESTION_NOT_ACTIVE`
+
+#### Infrastructure/dependency errors
+- `FILE_UPLOAD_FAILED`
+- `TEXT_EXTRACTION_FAILED`
+- `OCR_UNAVAILABLE`
+- `AI_PROVIDER_UNAVAILABLE`
+- `DATABASE_ERROR`
+- `INTERNAL_ERROR`
+
+### Validation detail shape
+When returning field-level issues, prefer:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [
+      {
+        "field": "batchSize",
+        "issue": "must be between 1 and 20"
+      }
+    ]
+  }
+}
+```
+
+### Representative error examples
+
+#### Invalid login
+Status: `401 Unauthorized`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Email or password is incorrect"
+  }
+}
+```
+
+#### Missing project
+Status: `404 Not Found`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "PROJECT_NOT_FOUND",
+    "message": "Learning project not found"
+  }
+}
+```
+
+#### Invalid question generation payload
+Status: `422 Unprocessable Entity`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_BATCH_SIZE",
+    "message": "Question batch size is invalid",
+    "details": [
+      {
+        "field": "batchSize",
+        "issue": "must be between 1 and 20"
+      }
+    ]
+  }
+}
+```
+
+#### Outline generation with no active materials
+Status: `409 Conflict`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NO_ACTIVE_MATERIALS",
+    "message": "At least one active material is required before generating an outline"
+  }
+}
+```
+
+#### Dependency outage during extraction
+Status: `503 Service Unavailable`
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TEXT_EXTRACTION_FAILED",
+    "message": "Text extraction is temporarily unavailable"
+  }
+}
+```
+
+### Logging and security notes
+- Never return stack traces, SQL fragments, tokens, or secrets in API responses.
+- Server logs should retain the full internal exception and request context.
+- Ownership checks should prefer `404` or generic `403` behavior consistently to avoid resource enumeration leaks.
+- Generation and upload endpoints should log enough context to reproduce failures without leaking user content into client-facing error messages.
 
 ## Recommended implementation order from this map
 1. auth endpoints

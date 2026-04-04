@@ -24,7 +24,7 @@ Rules for use:
 ### D0.2 API endpoint spec
 - [x] Map endpoints from schema and product flow
 - [x] Define request/response shapes
-- [ ] Define error handling conventions
+- [x] Define error handling conventions
 - [ ] Define MVP vs later endpoints
 - [ ] Save artifact: `docs/API_ENDPOINT_SPEC.md`
 - [ ] Commit and push
