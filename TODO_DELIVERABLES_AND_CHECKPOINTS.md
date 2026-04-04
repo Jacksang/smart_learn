@@ -18,8 +18,8 @@ Rules for use:
 - [x] Define table-by-table columns
 - [x] Define enums/status fields
 - [x] Define indexes and MVP scope notes
-- [ ] Save artifact: `docs/POSTGRESQL_SCHEMA_SPEC.md`
-- [ ] Commit and push
+- [x] Save artifact: `docs/POSTGRESQL_SCHEMA_SPEC.md`
+- [x] Commit and push
 
 ### D0.2 API endpoint spec
 - [ ] Map endpoints from schema and product flow
@@ -159,4 +159,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Complete D0.1 and push `docs/POSTGRESQL_SCHEMA_SPEC.md`
+- [x] Complete D0.1 and push `docs/POSTGRESQL_SCHEMA_SPEC.md`
