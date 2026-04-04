@@ -1,29 +1,50 @@
-const { parseOutlineFile } = require('./parser');
-const { listByUser, createOutline } = require('./repository');
+const outlineService = require('./service');
+const repository = require('./repository');
 
-exports.listOutlines = async (req, res, next) => {
+function normalizeOutlineCreateBody(body = {}) {
+  return {
+    projectId: body.projectId ?? body.project_id,
+    title: body.title,
+    status: body.status,
+    items: body.items,
+  };
+}
+
+exports.createOutline = async (req, res, next) => {
   try {
-    const outlines = await listByUser(req.user.id);
-    return res.status(200).json({ outlines });
+    const input = normalizeOutlineCreateBody(req.body);
+    const validation = outlineService.prepareOutlineCreateInput(input);
+
+    if (!validation.isValid) {
+      return res.status(400).json({
+        message: 'Invalid request payload',
+        errors: validation.errors,
+      });
+    }
+
+    const outline = await outlineService.createOutline({
+      userId: req.user.id,
+      ...input,
+    });
+
+    if (!outline) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    return res.status(201).json({
+      message: 'Outline created',
+      outline,
+    });
   } catch (error) {
     return next(error);
   }
 };
 
-exports.createOutline = async (req, res, next) => {
+exports.listOutlines = async (req, res, next) => {
   try {
-    const outline = await createOutline({
-      userId: req.user.id,
-      courseTitle: req.body.courseTitle,
-      subject: req.body.subject,
-      sourceType: req.body.sourceType || 'manual',
-      sourcePath: req.body.sourcePath || null,
-      topics: req.body.topics || [],
-      aiSummary: req.body.aiSummary || '',
-      status: req.body.status || 'draft',
-    });
-
-    return res.status(201).json({ message: 'Outline created', outline });
+    const projectId = req.query.projectId ?? req.query.project_id;
+    const outlines = await repository.listByUser(req.user.id, projectId);
+    return res.status(200).json({ outlines });
   } catch (error) {
     return next(error);
   }
@@ -32,28 +53,38 @@ exports.createOutline = async (req, res, next) => {
 exports.uploadOutline = async (req, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'Outline file is required' });
+      return res.status(400).json({ message: 'File is required' });
     }
 
+    const { parseOutlineFile } = require('./parser');
     const parsed = await parseOutlineFile(req.file.path, req.file.mimetype);
 
-    const outline = await createOutline({
+    const outline = await outlineService.createOutline({
       userId: req.user.id,
-      courseTitle: req.body.courseTitle || req.file.originalname,
-      subject: req.body.subject || 'General',
-      sourceType: req.file.mimetype === 'application/pdf' ? 'pdf' : 'text',
-      sourcePath: req.file.path,
-      topics: parsed.topics,
-      aiSummary: parsed.rawText.slice(0, 1000),
-      status: 'processed',
+      projectId: req.body.projectId ?? req.body.project_id,
+      title: req.body.title || parsed.rawText.split('\n')[0] || 'Untitled Outline',
+      items: parsed.topics || [],
+      status: req.body.status,
     });
 
+    if (!outline) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
     return res.status(201).json({
-      message: 'Outline uploaded and parsed',
+      message: 'Outline uploaded and created',
       outline,
-      extractedTopics: parsed.topics.length,
     });
   } catch (error) {
+    if (error.code === 'INVALID_OUTLINE_PAYLOAD') {
+      return res.status(error.status || 400).json({
+        message: 'Invalid request payload',
+        errors: error.details || [],
+      });
+    }
+
     return next(error);
   }
 };
+
+exports.normalizeOutlineCreateBody = normalizeOutlineCreateBody;
