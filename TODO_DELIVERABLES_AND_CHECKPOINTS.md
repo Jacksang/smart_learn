@@ -34,7 +34,7 @@ Rules for use:
 - [x] Define transitions and interruption handling
 - [x] Define deferred-question behavior
 - [x] Save artifact: `docs/LESSON_STATE_MACHINE.md`
-- [ ] Commit and push
+- [x] Commit and push
 
 ### D0.4 File ingestion strategy
 - [ ] Define MVP support for text / PDF / DOCX / image OCR
