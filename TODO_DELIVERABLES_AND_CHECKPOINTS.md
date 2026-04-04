@@ -17,7 +17,7 @@ Rules for use:
 - [x] Draft schema entities and relationships
 - [x] Define table-by-table columns
 - [x] Define enums/status fields
-- [ ] Define indexes and MVP scope notes
+- [x] Define indexes and MVP scope notes
 - [ ] Save artifact: `docs/POSTGRESQL_SCHEMA_SPEC.md`
 - [ ] Commit and push
 

@@ -468,3 +468,122 @@ Notes:
 - Deferred/off-track question handling -> `deferred_questions`
 - Learn/Review/Quiz/Reinforce flow tracking -> `learning_sessions`
 - Progress and encouragement summaries -> `progress_snapshots`
+
+## Recommended indexes
+
+The goal for MVP indexing is to optimize common read paths first: project dashboards, active outline lookup, question batch retrieval, answer history, and progress summaries.
+
+### users
+- unique index on `email`
+
+Reason:
+- login and account lookup by email should be fast and globally unique
+
+### learning_projects
+- index on `(user_id, status, updated_at desc)`
+- optional index on `(user_id, created_at desc)`
+
+Reason:
+- primary project list screens will usually fetch active or recent projects per user
+
+### source_materials
+- index on `(project_id, is_active, created_at desc)`
+- index on `(project_id, source_kind)`
+
+Reason:
+- outline generation and refresh flows need fast access to active materials for a project
+- weighting/fallback logic may filter by material origin
+
+### outlines
+- unique index on `(project_id, version_no)`
+- index on `(project_id, status, created_at desc)`
+
+Reason:
+- project-level outline version history should be unique and easy to fetch
+- active outline lookup must be cheap
+
+### outline_items
+- index on `(outline_id, parent_item_id, sort_order)`
+- index on `(outline_id, depth_level, sort_order)`
+
+Reason:
+- topic tree rendering depends on hierarchical fetches ordered by parent and position
+- topic-level traversal and filtered views may use depth
+
+### questions
+- index on `(project_id, status, created_at desc)`
+- index on `(project_id, outline_item_id, batch_no, position_in_batch)`
+- index on `(project_id, batch_no)`
+
+Reason:
+- common reads include current project questions, topic-specific batches, and follow-up batch generation
+
+### answer_attempts
+- index on `(question_id, answered_at desc)`
+- index on `(project_id, session_id, answered_at desc)`
+- unique index on `(question_id, attempt_no)`
+
+Reason:
+- evaluation history and session playback should be efficient
+- retry order should be stable per question
+
+Note:
+- if answer attempts may later be multi-user across shared projects, change this unique index to include `project_id` or `user_id`
+
+### progress_snapshots
+- index on `(project_id, created_at desc)`
+- index on `(project_id, outline_item_id, created_at desc)`
+- index on `(project_id, snapshot_type, created_at desc)`
+
+Reason:
+- project summaries, topic progress views, and latest dashboard snapshots are all recent-first reads
+
+### deferred_questions
+- index on `(project_id, status, created_at desc)`
+- index on `(session_id, status, created_at desc)`
+- index on `(outline_item_id, status, created_at desc)`
+
+Reason:
+- parked-question revisit flows usually filter unresolved items by project, session, or topic
+
+### learning_sessions
+- index on `(project_id, status, started_at desc)`
+- index on `(user_id, status, started_at desc)`
+- index on `(project_id, current_outline_item_id)`
+
+Reason:
+- resuming the active session and locating the current topic thread should be cheap
+
+## MVP scope notes
+
+### In scope for MVP schema and implementation
+- `users` with basic email/password authentication
+- `learning_projects` as the root study container
+- `source_materials` for pasted text, uploads, and system base knowledge placeholders
+- `outlines` and `outline_items` for generated learning structure
+- `questions` with default 5-question batch tracking
+- `answer_attempts` for submission history and correctness tracking
+- `progress_snapshots` for lightweight project/topic progress summaries
+
+### Allowed in schema now, but implementation can be deferred slightly
+- `learning_sessions`
+- `deferred_questions`
+
+Reason:
+- both support the intended tutor flow and are worth reserving in the schema early
+- implementation can trail the core ingestion -> outline -> quiz -> answer loop if time is tight
+
+### Explicitly out of MVP implementation
+- parent/teacher/admin role workflows
+- advanced file ingestion beyond text-first behavior
+- production OCR and rich document extraction pipelines
+- real LLM generation pipeline beyond mock AI
+- fine-grained motivation engine logic
+- collaborative or multi-student shared projects
+- analytics-heavy reporting and material-version diffing
+
+### Pragmatic implementation guidance
+- prefer normal btree indexes first; only add GIN indexes when jsonb querying becomes real, not hypothetical
+- keep constraints simple enough to ship migrations quickly
+- use nullable columns for near-term features instead of over-normalizing prematurely
+- reserve room for later tutor-flow features without letting them block the core MVP loop
