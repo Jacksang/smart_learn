@@ -48,18 +48,19 @@ Rules for use:
 - [x] Define struggle recovery templates
 - [x] Define progress language rules
 - [x] Save artifact: `docs/FEEDBACK_TEMPLATE_CATALOG.md`
-- [ ] Commit and push
+- [x] Commit and push
 
 ---
 
 ## Phase 1 — Backend MVP Foundation
 
 ### D1.1 PostgreSQL migration foundation
-- [ ] Remove/retire Mongo-oriented persistence path
-- [ ] Add PostgreSQL driver / ORM decision
-- [ ] Create schema bootstrap or migrations
-- [ ] Save artifact: migration files + setup doc
+- [x] Remove/retire Mongo-oriented persistence path
+- [x] Add PostgreSQL driver / ORM decision
+- [x] Create schema bootstrap or migrations
+- [x] Save artifact: migration files + setup doc
 - [ ] Commit and push
+  - Sync note (2026-04-04): D1.1.A-F are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, and `docs/POSTGRES_SETUP.md`; only the final parent-checkpoint closeout commit remains.
 
 ### D1.2 Project and material management
 - [ ] Implement `learning_projects`
