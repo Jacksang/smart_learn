@@ -3,8 +3,9 @@
 ## Status
 Completed checkpoints in this document:
 - Map endpoints from schema and product flow
+- Define request/response shapes
 
-Remaining checkpoints will extend this document with request/response shapes, error handling conventions, MVP/later splits, and final delivery notes.
+Remaining checkpoints will extend this document with error handling conventions, MVP/later splits, and final delivery notes.
 
 ---
 
@@ -547,6 +548,681 @@ Schema mapping:
 - `POST /api/projects/:projectId/deferred-questions/:deferredQuestionId/revisit`
 
 ---
+
+## Request and response shape conventions
+
+### Common response envelope
+Successful responses should use a predictable envelope:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "meta": {}
+}
+```
+
+Notes:
+- `data` holds the primary resource or action result.
+- `meta` is optional and can include pagination, generation context, or summary fields.
+- list endpoints should return arrays inside `data.items` when pagination metadata is needed.
+
+### Common write-response pattern
+Create/update action responses should prefer:
+
+```json
+{
+  "success": true,
+  "data": {
+    "resource": {}
+  },
+  "meta": {
+    "message": "Human-readable summary"
+  }
+}
+```
+
+### Common list-response pattern
+```json
+{
+  "success": true,
+  "data": {
+    "items": []
+  },
+  "meta": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 100
+  }
+}
+```
+
+### Common action-response pattern
+For generation/evaluation endpoints:
+
+```json
+{
+  "success": true,
+  "data": {
+    "result": {}
+  },
+  "meta": {
+    "message": "Action completed"
+  }
+}
+```
+
+---
+
+## Representative request/response shapes by workflow
+
+### Authentication
+
+#### `POST /api/auth/register`
+Request:
+```json
+{
+  "email": "student@example.com",
+  "password": "strong-password",
+  "displayName": "Ava"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "student@example.com",
+      "displayName": "Ava",
+      "role": "student",
+      "status": "active"
+    },
+    "token": "jwt-or-session-token"
+  }
+}
+```
+
+#### `POST /api/auth/login`
+Request:
+```json
+{
+  "email": "student@example.com",
+  "password": "strong-password"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "student@example.com",
+      "displayName": "Ava"
+    },
+    "token": "jwt-or-session-token"
+  }
+}
+```
+
+#### `GET /api/auth/me`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "uuid",
+      "email": "student@example.com",
+      "displayName": "Ava",
+      "role": "student",
+      "status": "active"
+    }
+  }
+}
+```
+
+### Learning projects
+
+#### `POST /api/projects`
+Request:
+```json
+{
+  "title": "AWS Basics",
+  "description": "Foundational cloud concepts",
+  "subject": "Cloud Computing"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "project": {
+      "id": "uuid",
+      "title": "AWS Basics",
+      "description": "Foundational cloud concepts",
+      "subject": "Cloud Computing",
+      "status": "active",
+      "currentMode": null,
+      "currentOutlineId": null,
+      "createdAt": "2026-04-04T00:00:00Z",
+      "updatedAt": "2026-04-04T00:00:00Z"
+    }
+  }
+}
+```
+
+#### `GET /api/projects`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "title": "AWS Basics",
+        "subject": "Cloud Computing",
+        "status": "active",
+        "currentMode": "learn",
+        "updatedAt": "2026-04-04T00:00:00Z"
+      }
+    ]
+  },
+  "meta": {
+    "page": 1,
+    "pageSize": 20,
+    "total": 1
+  }
+}
+```
+
+#### `GET /api/projects/:projectId/overview`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "project": {
+      "id": "uuid",
+      "title": "AWS Basics",
+      "status": "active",
+      "currentMode": "review"
+    },
+    "activeOutline": {
+      "id": "uuid",
+      "versionNo": 2,
+      "status": "active"
+    },
+    "latestProgress": {
+      "progressState": "improving",
+      "completionPercent": 42.5,
+      "masteryScore": 61.0
+    },
+    "activeSession": {
+      "id": "uuid",
+      "mode": "review",
+      "status": "active"
+    }
+  }
+}
+```
+
+### Source materials
+
+#### `POST /api/projects/:projectId/materials`
+Request:
+```json
+{
+  "sourceKind": "pasted_text",
+  "materialType": "text",
+  "title": "Cloud notes",
+  "rawText": "AWS offers compute, storage, and networking services.",
+  "weight": 1.25
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "material": {
+      "id": "uuid",
+      "projectId": "uuid",
+      "sourceKind": "pasted_text",
+      "materialType": "text",
+      "title": "Cloud notes",
+      "weight": 1.25,
+      "isActive": true,
+      "createdAt": "2026-04-04T00:00:00Z"
+    }
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/materials/upload`
+Request shape:
+- multipart form-data
+- fields:
+  - `file`
+  - optional `title`
+  - optional `weight`
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "material": {
+      "id": "uuid",
+      "projectId": "uuid",
+      "sourceKind": "user_upload",
+      "materialType": "pdf",
+      "originalFileName": "aws-intro.pdf",
+      "mimeType": "application/pdf",
+      "storagePath": "/uploads/aws-intro.pdf",
+      "isActive": true
+    }
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/materials/base-knowledge`
+Request:
+```json
+{
+  "title": "AWS Basics Base Knowledge",
+  "subject": "Cloud Computing",
+  "reason": "insufficient_user_material"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "material": {
+      "id": "uuid",
+      "sourceKind": "system_base_knowledge",
+      "materialType": "base_knowledge",
+      "title": "AWS Basics Base Knowledge",
+      "weight": 0.75
+    }
+  },
+  "meta": {
+    "message": "Base knowledge material added"
+  }
+}
+```
+
+### Outlines and outline items
+
+#### `POST /api/projects/:projectId/outlines`
+Request:
+```json
+{
+  "sourceMaterialIds": ["uuid-1", "uuid-2"],
+  "generationSource": "mock_ai"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "outline": {
+      "id": "uuid",
+      "projectId": "uuid",
+      "versionNo": 1,
+      "status": "active",
+      "summary": "An AWS foundations outline"
+    },
+    "items": [
+      {
+        "id": "uuid",
+        "title": "Core AWS Services",
+        "parentItemId": null,
+        "sortOrder": 1,
+        "depthLevel": 0
+      }
+    ]
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/outlines/refresh`
+Request:
+```json
+{
+  "reason": "materials_changed"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "outline": {
+      "id": "uuid",
+      "versionNo": 2,
+      "status": "active"
+    },
+    "supersededOutlineId": "uuid-old"
+  },
+  "meta": {
+    "message": "Outline refreshed from active materials"
+  }
+}
+```
+
+#### `GET /api/projects/:projectId/outlines/:outlineId/items`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "title": "Core AWS Services",
+        "summary": "Compute, storage, and networking basics",
+        "parentItemId": null,
+        "sortOrder": 1,
+        "depthLevel": 0,
+        "keyPoints": ["EC2", "S3", "VPC"]
+      }
+    ]
+  }
+}
+```
+
+### Questions and batches
+
+#### `POST /api/projects/:projectId/questions/generate`
+Request:
+```json
+{
+  "outlineItemId": "uuid-topic",
+  "batchSize": 5,
+  "difficultyLevel": "medium",
+  "questionTypes": ["multiple_choice", "short_answer"]
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "questions": [
+      {
+        "id": "uuid",
+        "batchNo": 1,
+        "positionInBatch": 1,
+        "questionType": "multiple_choice",
+        "difficultyLevel": "medium",
+        "prompt": "Which AWS service provides object storage?",
+        "options": ["EC2", "S3", "IAM", "Route 53"],
+        "status": "active"
+      }
+    ]
+  },
+  "meta": {
+    "batchSize": 5,
+    "generatedCount": 5
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/questions/generate-next-batch`
+Request:
+```json
+{
+  "outlineItemId": "uuid-topic",
+  "batchSize": 5
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "questions": []
+  },
+  "meta": {
+    "batchNo": 2,
+    "generatedCount": 5
+  }
+}
+```
+
+#### `GET /api/projects/:projectId/questions`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "outlineItemId": "uuid-topic",
+        "batchNo": 1,
+        "positionInBatch": 1,
+        "questionType": "multiple_choice",
+        "difficultyLevel": "medium",
+        "prompt": "Which AWS service provides object storage?",
+        "status": "active"
+      }
+    ]
+  }
+}
+```
+
+### Answers and evaluation
+
+#### `POST /api/projects/:projectId/questions/:questionId/answers`
+Request:
+```json
+{
+  "sessionId": "uuid-session",
+  "userAnswer": {
+    "selectedOption": "S3"
+  }
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "answerAttempt": {
+      "id": "uuid",
+      "questionId": "uuid",
+      "sessionId": "uuid-session",
+      "userAnswer": {
+        "selectedOption": "S3"
+      },
+      "isCorrect": true,
+      "score": 1,
+      "feedbackText": "Correct — S3 is AWS object storage.",
+      "attemptNo": 1,
+      "answeredAt": "2026-04-04T00:00:00Z"
+    }
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/answers/evaluate`
+Request:
+```json
+{
+  "answerAttemptId": "uuid"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "evaluation": {
+      "answerAttemptId": "uuid",
+      "isCorrect": true,
+      "score": 1,
+      "feedbackText": "Correct — S3 is AWS object storage.",
+      "explanation": "S3 stores objects, while EC2 runs virtual machines."
+    }
+  }
+}
+```
+
+### Progress tracking
+
+#### `POST /api/projects/:projectId/progress/refresh`
+Request:
+```json
+{
+  "snapshotType": "project",
+  "trigger": "answer_submitted"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "progressSnapshot": {
+      "id": "uuid",
+      "snapshotType": "project",
+      "completionPercent": 42.5,
+      "masteryScore": 61,
+      "progressState": "improving",
+      "weakAreas": ["VPC networking"],
+      "strengthAreas": ["Storage basics"],
+      "summaryText": "Strong progress on storage. Networking needs more review."
+    }
+  }
+}
+```
+
+#### `GET /api/projects/:projectId/progress/weak-areas`
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "outlineItemId": "uuid-topic",
+        "title": "VPC networking",
+        "progressState": "needs_reinforcement",
+        "masteryScore": 35
+      }
+    ]
+  }
+}
+```
+
+### Sessions and deferred questions
+
+#### `POST /api/projects/:projectId/sessions`
+Request:
+```json
+{
+  "mode": "learn",
+  "currentOutlineItemId": "uuid-topic"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "session": {
+      "id": "uuid",
+      "projectId": "uuid",
+      "mode": "learn",
+      "status": "active",
+      "currentOutlineItemId": "uuid-topic",
+      "startedAt": "2026-04-04T00:00:00Z"
+    }
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/deferred-questions`
+Request:
+```json
+{
+  "sessionId": "uuid-session",
+  "outlineItemId": "uuid-topic",
+  "questionText": "Why would I choose a private subnet here?",
+  "deferReason": "needs_later_context"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "deferredQuestion": {
+      "id": "uuid",
+      "status": "deferred",
+      "questionText": "Why would I choose a private subnet here?",
+      "deferReason": "needs_later_context",
+      "createdAt": "2026-04-04T00:00:00Z"
+    }
+  }
+}
+```
+
+#### `POST /api/projects/:projectId/deferred-questions/:deferredQuestionId/revisit`
+Request:
+```json
+{
+  "sessionId": "uuid-session"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "data": {
+    "deferredQuestion": {
+      "id": "uuid",
+      "status": "revisited"
+    }
+  },
+  "meta": {
+    "message": "Deferred question loaded back into the tutor flow"
+  }
+}
+```
+
+---
+
+## Field naming guidance
+- JSON requests/responses should use `camelCase`.
+- Database tables/columns can remain `snake_case` internally.
+- IDs should be exposed consistently as string UUIDs.
+- Timestamps should be ISO 8601 UTC strings.
+- Nullable fields should return `null` instead of being omitted when clarity matters to clients.
 
 ## Recommended implementation order from this map
 1. auth endpoints
