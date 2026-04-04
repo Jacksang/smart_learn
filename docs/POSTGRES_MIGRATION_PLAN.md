@@ -2,8 +2,11 @@
 
 ## Status
 - Created: 2026-04-04
-- Checkpoint covered: D1.1.A — persistence strategy decision
-- Scope here: record the PostgreSQL access decision, rationale, current-state findings, and D1.1 migration boundary
+- Updated: 2026-04-04
+- Checkpoints covered:
+  - D1.1.A — persistence strategy decision
+  - D1.1.B — runtime retirement plan for Mongo path
+- Scope here: record the PostgreSQL access decision, rationale, current-state findings, Mongo runtime retirement inventory/map, and D1.1 migration boundary
 
 ## Decision
 Smart Learn MVP will standardize on **PostgreSQL via direct `pg` access** with **thin per-domain repository modules**.
@@ -85,6 +88,48 @@ The migration should avoid in D1.1:
 - introducing multiple new data-access layers at once
 - schema complexity beyond what is needed for MVP foundation work
 
+## Mongo runtime inventory and retirement map
+
+### Inventory: direct Mongoose model definitions
+- `backend/models/User.js`
+- `backend/models/Outline.js`
+- `backend/models/Question.js`
+- `backend/models/Answer.js`
+
+### Inventory: active runtime imports that still use Mongo-style models
+- `backend/src/users/controller.js`
+- `backend/src/users/middleware.js`
+- `backend/src/outline/controller.js`
+- `backend/src/questions/controller.js`
+- `backend/src/answers/controller.js`
+
+### Inventory: dependency/package references still mentioning Mongo
+- `package.json` → declares `mongoose`
+- `package-lock.json` → lockfile entries for `mongoose`
+- `docs/POSTGRES_MIGRATION_PLAN.md` → historical migration notes referencing Mongo/Mongoose
+
+### Retirement / replacement decisions
+- Retire `backend/models/{User,Outline,Question,Answer}.js` once no active runtime path imports them.
+- Replace active controller/middleware imports directly with PostgreSQL repository helpers already present under:
+  - `backend/src/users/repository.js`
+  - `backend/src/outline/repository.js`
+  - `backend/src/questions/repository.js`
+  - `backend/src/answers/repository.js`
+- Do **not** add a temporary compatibility shim in D1.1. The cutover should be controller-to-repository directly.
+- Keep `mongoose` declared only until the runtime import cutover and dependency cleanup checkpoint are complete.
+
+### Replacement map by active file
+- `backend/src/users/controller.js` → replace `../../models/User` with `./repository` helpers for auth/profile flows
+- `backend/src/users/middleware.js` → replace `../../models/User` with `./repository.findById`
+- `backend/src/outline/controller.js` → replace `../../models/Outline` with `./repository` list/create helpers
+- `backend/src/questions/controller.js` → replace `../../models/Question` with `./repository` list/create/find helpers
+- `backend/src/answers/controller.js` → replace `../../models/{Answer,Question}` with `../answers/repository` and `../questions/repository` helpers
+
+### Expected post-cutover state
+- `backend/server.js` startup path should not require `backend/models/*`
+- Mongo model files may remain briefly as dead code, but only until safe deletion/dependency cleanup
+- After cutover, `mongoose` can be removed from active runtime dependencies in a later D1.1 checkpoint
+
 ## Exact runtime path changes required to remove Mongo from the active path
 
 ### 1. Auth controller cutover
@@ -165,7 +210,6 @@ Once the five files above are rewired:
 
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
-- Mongo/Mongoose import inventory and retirement map
 - environment variable and connection config design
 - schema/bootstrap file layout and migration approach
 - dependency/config update notes
