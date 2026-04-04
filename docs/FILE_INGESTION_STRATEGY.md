@@ -194,6 +194,63 @@ If extracted text is suspiciously weak, the system should mark the material as `
 - Do not expose raw stack traces to end users.
 - Keep extraction idempotent where practical so retries do not duplicate material records.
 
+## Metadata storage rules
+
+### Core principle
+Store enough metadata to make every material traceable, debuggable, reprocessable, and rankable for downstream learning flows.
+
+### Required metadata for all materials
+Every material record should capture at least:
+- stable material id
+- owning project id
+- source kind (`user_upload`, `user_text`, `system_base_knowledge`)
+- material type (`text`, `pdf`, `docx`, `image`, `base_knowledge`)
+- user-visible title
+- original file name when applicable
+- MIME type when applicable
+- storage path or blob reference when applicable
+- extracted text or extracted text reference
+- extraction status
+- extraction failure reason when present
+- default/system-assigned weight
+- user-adjusted weight if changed later
+- active/inactive flag
+- created at / updated at timestamps
+
+### Recommended extraction metadata
+To support retries and better diagnostics, store:
+- extractor type used
+- extractor version when practical
+- OCR confidence or quality signal
+- extracted text length
+- page count when available
+- file size in bytes
+- checksum or content hash for deduplication and cache reuse
+- processing started/finished timestamps
+
+### Metadata behavior rules
+- Raw file metadata and extracted-content metadata should be kept distinct.
+- Metadata should explain whether content came from parser text, OCR, or system generation.
+- User-facing flows should expose only safe metadata, not internal parser traces.
+- Metadata updates must be non-destructive; if extraction is retried, retain the latest state and optionally a prior-attempt audit trail.
+
+### Weighting and learning relevance rules
+- User uploads should default higher than base knowledge.
+- OCR-derived materials may need lower confidence weighting in generation logic if extraction quality is weak.
+- Inactive materials should remain queryable for audit/history but excluded from outline and question generation by default.
+- Materials with failed extraction should not count as active learning content until fixed.
+
+### Outline refresh implications
+When these metadata fields change, the system should consider the project outline stale:
+- extracted text changed materially
+- weight changed materially
+- active state changed
+- a failed extraction becomes successful
+- a new high-priority user upload is added
+
+### Suggested mapping to schema work
+This document assumes `source_materials` can hold current MVP metadata directly. If that table becomes too wide later, extraction-attempt details can move into a separate table such as `material_ingestion_jobs` or `material_extractions`.
+
 ## Architecture direction
 MVP ingestion should be modeled as a two-stage flow:
 1. file acceptance and storage
@@ -202,5 +259,4 @@ MVP ingestion should be modeled as a two-stage flow:
 This keeps upload reliability separate from parser reliability and makes retries easier.
 
 Later checkpoints in this document will define:
-- metadata storage rules
 - artifact completion details
