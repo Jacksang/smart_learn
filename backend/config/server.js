@@ -29,6 +29,16 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+    const isPostgresSchemaGap = err && ['42P01', '42703', '23503'].includes(err.code);
+
+    if (isPostgresSchemaGap) {
+        console.error('PostgreSQL MVP schema gap:', err.message);
+        return res.status(503).json({
+            message: 'This endpoint is not ready in the PostgreSQL-only MVP yet.',
+            detail: 'The requested operation still depends on schema/runtime work that has not been completed.',
+        });
+    }
+
     console.error(err.stack);
     res.status(err.status || 500).json({
         message: err.message,
