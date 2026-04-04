@@ -22,7 +22,7 @@ Rules for use:
 - [x] Commit and push
 
 ### D0.2 API endpoint spec
-- [ ] Map endpoints from schema and product flow
+- [x] Map endpoints from schema and product flow
 - [ ] Define request/response shapes
 - [ ] Define error handling conventions
 - [ ] Define MVP vs later endpoints
