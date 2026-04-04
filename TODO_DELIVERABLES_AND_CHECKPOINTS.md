@@ -59,9 +59,8 @@ Rules for use:
 - [x] Add PostgreSQL driver / ORM decision
 - [x] Create schema bootstrap or migrations
 - [x] Save artifact: migration files + setup doc
-- [ ] Commit and push
-  - Sync note (2026-04-04): D1.1.A-F are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, and `docs/POSTGRES_SETUP.md`.
-  - Parent checkpoint status (2026-04-04): all non-commit D1.1 parent checkpoints are now explicitly marked done in this file; the only remaining open parent checkpoint is the final D1.1 closeout commit/push.
+- [x] Commit and push
+  - Closeout note (2026-04-04): D1.1.A-G are complete in `D1.1_POSTGRES_MIGRATION_SUBCHECKLIST.md`, including PostgreSQL-only runtime cutover, `docs/POSTGRES_MIGRATION_PLAN.md`, `backend/db/schema/001_baseline.sql`, `docs/POSTGRES_SETUP.md`, and the parent-checklist sync/closeout commits.
 
 ### D1.2 Project and material management
 - [ ] Implement `learning_projects`
@@ -161,4 +160,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [x] Complete D0.1 and push `docs/POSTGRESQL_SCHEMA_SPEC.md`
+- [ ] Start D1.2 via `D1.2_PROJECT_AND_MATERIAL_MANAGEMENT_SUBCHECKLIST.md`
