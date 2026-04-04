@@ -74,11 +74,12 @@ Rules for use:
   - Closeout note (2026-04-04): Completed the parent D1.2 closeout commit/push after the sub-checklist had already been closed and pushed.
 
 ### D1.3 Outline generation flow
-- [ ] Implement outline creation endpoint
-- [ ] Implement outline refresh on material change
-- [ ] Implement `outlines` + `outline_items`
-- [ ] Save artifact: working routes + tests
-- [ ] Commit and push
+- [x] Implement outline creation endpoint
+- [x] Implement outline refresh on material change
+- [x] Implement `outlines` + `outline_items`
+- [x] Save artifact: working routes + tests
+- [x] Commit and push
+  - Closeout note (2026-04-04): D1.3.A-F are complete in `D1.3_OUTLINE_GENERATION_FLOW_SUBCHECKLIST.md`, including schema split/migration verification, outline creation + refresh + retrieval endpoints, focused integration coverage in `backend/src/outline/flow.integration.test.js`, and `docs/OUTLINE_GENERATION_FLOW.md`. Related commits were pushed through `b14e8a7`.
 
 ### D1.4 Question generation flow
 - [ ] Implement question generation from outline
