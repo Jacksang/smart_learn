@@ -5,8 +5,9 @@ Completed checkpoints in this document:
 - Map endpoints from schema and product flow
 - Define request/response shapes
 - Define error handling conventions
+- Define MVP vs later endpoints
 
-Remaining checkpoints will extend this document with MVP/later splits and final delivery notes.
+Remaining checkpoints will extend this document with final delivery notes.
 
 ---
 
@@ -1401,6 +1402,89 @@ Status: `503 Service Unavailable`
 - Server logs should retain the full internal exception and request context.
 - Ownership checks should prefer `404` or generic `403` behavior consistently to avoid resource enumeration leaks.
 - Generation and upload endpoints should log enough context to reproduce failures without leaking user content into client-facing error messages.
+
+## MVP vs later endpoint split
+
+### MVP endpoints
+These should be implemented first because they cover the core loop: create project -> add material -> generate outline -> generate questions -> submit answers -> inspect progress.
+
+#### Authentication
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+
+#### Projects
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/projects/:projectId`
+- `PATCH /api/projects/:projectId`
+- `GET /api/projects/:projectId/overview`
+
+#### Materials
+- `GET /api/projects/:projectId/materials`
+- `POST /api/projects/:projectId/materials`
+- `GET /api/projects/:projectId/materials/:materialId`
+- `PATCH /api/projects/:projectId/materials/:materialId`
+- `DELETE /api/projects/:projectId/materials/:materialId`
+- `POST /api/projects/:projectId/materials/upload`
+- `POST /api/projects/:projectId/materials/base-knowledge`
+- `POST /api/projects/:projectId/materials/reweight`
+
+#### Outlines
+- `GET /api/projects/:projectId/outlines`
+- `POST /api/projects/:projectId/outlines`
+- `GET /api/projects/:projectId/outlines/:outlineId`
+- `POST /api/projects/:projectId/outlines/refresh`
+- `POST /api/projects/:projectId/outlines/:outlineId/activate`
+- `GET /api/projects/:projectId/outlines/:outlineId/items`
+- `GET /api/projects/:projectId/outlines/:outlineId/items/:itemId`
+
+#### Questions and answers
+- `GET /api/projects/:projectId/questions`
+- `POST /api/projects/:projectId/questions/generate`
+- `POST /api/projects/:projectId/questions/generate-next-batch`
+- `GET /api/projects/:projectId/questions/:questionId`
+- `POST /api/projects/:projectId/questions/:questionId/answers`
+- `GET /api/projects/:projectId/questions/:questionId/answers`
+- `POST /api/projects/:projectId/answers/evaluate`
+- `GET /api/projects/:projectId/answers/history`
+
+#### Progress
+- `GET /api/projects/:projectId/progress`
+- `POST /api/projects/:projectId/progress/refresh`
+- `GET /api/projects/:projectId/progress/topics/:itemId`
+- `GET /api/projects/:projectId/progress/weak-areas`
+
+### Near-term post-MVP endpoints
+These support the intended tutor experience, but the product can still function without them in the first shipped backend slice.
+
+#### Sessions
+- `GET /api/projects/:projectId/sessions`
+- `POST /api/projects/:projectId/sessions`
+- `GET /api/projects/:projectId/sessions/:sessionId`
+- `PATCH /api/projects/:projectId/sessions/:sessionId`
+- `POST /api/projects/:projectId/sessions/:sessionId/resume`
+- `POST /api/projects/:projectId/sessions/:sessionId/end`
+
+#### Deferred questions
+- `GET /api/projects/:projectId/deferred-questions`
+- `POST /api/projects/:projectId/deferred-questions`
+- `GET /api/projects/:projectId/deferred-questions/:deferredQuestionId`
+- `PATCH /api/projects/:projectId/deferred-questions/:deferredQuestionId`
+- `POST /api/projects/:projectId/deferred-questions/:deferredQuestionId/revisit`
+
+### Later/admin-oriented endpoints
+These are useful, but not necessary for the first learning workflow release.
+- `DELETE /api/projects/:projectId` if archival alone is enough in MVP
+- `PATCH /api/projects/:projectId/outlines/:outlineId` for manual outline metadata management
+- `PATCH /api/projects/:projectId/questions/:questionId` for manual correction or moderation flows
+- richer export/reporting endpoints not yet listed in this spec
+- parent/teacher/admin management endpoints not yet listed in this spec
+
+### Why this split works
+- The MVP list is enough to prove the product loop and validate the database design.
+- Session and deferred-question endpoints depend on more nuanced state-machine behavior and can trail slightly behind.
+- Manual moderation/admin endpoints are nice-to-have once the core learner path is stable.
 
 ## Recommended implementation order from this map
 1. auth endpoints

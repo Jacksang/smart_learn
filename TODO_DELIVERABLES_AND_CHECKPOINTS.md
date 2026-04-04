@@ -25,7 +25,7 @@ Rules for use:
 - [x] Map endpoints from schema and product flow
 - [x] Define request/response shapes
 - [x] Define error handling conventions
-- [ ] Define MVP vs later endpoints
+- [x] Define MVP vs later endpoints
 - [ ] Save artifact: `docs/API_ENDPOINT_SPEC.md`
 - [ ] Commit and push
 
