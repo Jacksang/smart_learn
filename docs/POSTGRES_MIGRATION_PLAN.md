@@ -277,6 +277,48 @@ However, the long-term default policy should be:
 - prefer failing fast when required non-local variables are missing
 - keep only developer-friendly local defaults where they reduce setup friction without hiding deployment misconfiguration
 
+## PostgreSQL schema bootstrap / migration approach
+
+### D1.1 decision
+For D1.1, Smart Learn should use a **SQL-first bootstrap path backed by committed `.sql` files and a small Node runner**, not a third-party migration framework.
+
+### Why this approach fits the repo right now
+1. The backend already has a shared `pg` pool module in `backend/config/database.js`, so a Node runner can execute SQL immediately without adding another operational layer.
+2. There is no existing migration framework or migration directory in the repository today, so adding one would expand scope beyond the foundation checkpoint.
+3. D1.1 needs a reliable, inspectable way to create the MVP schema from `docs/POSTGRESQL_SCHEMA_SPEC.md`; plain SQL files are the most artifact-friendly way to do that.
+4. SQL-first bootstrap keeps schema review easy while controller/repository cutover is still in progress.
+
+### What D1.1 should implement
+- one **initial bootstrap SQL file** that creates the MVP schema objects in PostgreSQL
+- one **Node bootstrap script** that opens a database connection through the shared `pg` config and executes that SQL file
+- npm script wiring so a developer can run the bootstrap step intentionally during local setup
+- idempotent SQL where practical (`CREATE EXTENSION IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`, guarded index creation when needed)
+
+### Operational model for D1.1
+- Treat the first committed schema file as the **baseline bootstrap**, not a long migration history yet.
+- Re-running the bootstrap locally should be safe enough for an empty or partially initialized MVP database.
+- If a destructive schema change is needed during D1.1, prefer editing the baseline bootstrap while the feature is still pre-release, instead of inventing a complex migration chain too early.
+- After D1.1 stabilizes and the schema begins to evolve under active development, the project can decide whether to keep sequential SQL migrations or adopt a dedicated migration tool.
+
+### Explicit non-goals for this checkpoint
+D1.1 should **not** add:
+- an ORM migration system
+- a query-builder-specific migration layer
+- automatic runtime schema mutation on every server start
+- hidden schema creation inside request handlers
+
+### Bootstrap execution expectations
+- Bootstrap should run as a deliberate setup command, not implicitly on normal app startup.
+- Normal server startup should continue to do connectivity checks only (`SELECT 1`-style health verification) and fail clearly if the schema has not yet been created.
+- Schema ownership stays in committed SQL files; the Node runner is only the execution wrapper.
+
+### Forward-compatible migration stance
+Once the initial baseline exists, later checkpoints can extend the database in one of two compatible ways:
+1. keep adding ordered SQL migration files plus the same lightweight runner, or
+2. adopt a dedicated migration tool later and import the baseline as version `0001`
+
+This keeps the D1.1 foundation simple without blocking a more formal migration workflow later.
+
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
 - schema/bootstrap file layout and migration approach
