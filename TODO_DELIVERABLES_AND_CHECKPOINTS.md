@@ -31,7 +31,7 @@ Rules for use:
 
 ### D0.3 Lesson state machine
 - [x] Define Learn / Review / Quiz / Reinforce states
-- [ ] Define transitions and interruption handling
+- [x] Define transitions and interruption handling
 - [ ] Define deferred-question behavior
 - [ ] Save artifact: `docs/LESSON_STATE_MACHINE.md`
 - [ ] Commit and push

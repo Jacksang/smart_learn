@@ -164,9 +164,94 @@ Recommended mode values:
 
 ---
 
+## Transition model and interruption handling
+
+### Canonical transition graph
+
+```text
+start -> learn
+learn -> review      when learner finishes an explanation block and needs recall refresh
+learn -> quiz        when learner requests assessment or system judges readiness is high
+learn -> reinforce   when confusion or repeated failed checks appear
+
+review -> learn      when new explanation is needed before continuing
+review -> quiz       when refreshed understanding is strong enough for assessment
+review -> reinforce  when weak recall or low confidence is detected
+review -> review     when another recap pass is intentionally requested
+
+quiz -> review       when performance is mixed and refresh should happen before retry
+quiz -> reinforce    when struggle threshold is crossed
+quiz -> learn        when misunderstanding shows the concept was never really built
+quiz -> quiz         when another batch is explicitly requested and readiness remains high
+
+reinforce -> review  when the learner regains baseline understanding
+reinforce -> learn   when re-teaching is needed from a simpler angle
+reinforce -> quiz    only when the learner explicitly wants to retry and confidence has recovered
+reinforce -> reinforce when multiple weak subtopics need focused support in sequence
+
+any state -> paused  when the learner stops, disconnects, or leaves mid-step
+paused -> prior state on resume when the interrupted step is still valid
+paused -> review     on resume after a long break or stale context
+paused -> reinforce  on resume if the interruption happened during visible struggle
+```
+
+### Transition decision rules
+- The backend should treat transitions as explicit decisions with a `from_state`, `to_state`, `reason`, and timestamp recorded on the session timeline.
+- User intent can force some transitions, but safety rails still apply. Example: if the learner asks for quiz mode while the system sees strong struggle signals, the system may route through `review` or `reinforce` first and explain why.
+- `quiz -> learn` is allowed when incorrect answers reveal the learner lacks the underlying concept, not just recall strength.
+- `reinforce -> quiz` should be comparatively rare; default recovery path is `reinforce -> review -> quiz`.
+- A transition should happen only after finishing the current instructional atom unless there is an interruption, explicit stop, or severe confusion signal.
+
+### Transition triggers by signal
+
+| Signal | Likely transition | Notes |
+|---|---|---|
+| New topic selected | `start -> learn` | Default path for unseen material |
+| Learner asks for recap | `learn/reinforce -> review` | Use for lighter pressure refresh |
+| Good comprehension checks | `learn/review -> quiz` | Requires sufficient readiness |
+| Mixed quiz results | `quiz -> review` | Review weak concepts, then retry |
+| Repeated wrong answers | `quiz/review -> reinforce` | Lower difficulty and narrow scope |
+| Strong confusion statement | `any active state -> reinforce` | "I don't get this" should immediately soften the flow |
+| Need fresh teaching angle | `review/quiz/reinforce -> learn` | Rebuild concept from first principles |
+| User requests another assessment batch | `quiz -> quiz` | Preserve batch progression |
+| User leaves or session expires | `any active state -> paused` | Save state atomically |
+
+### Interruption handling
+
+#### Supported interruption types
+1. **Soft interruption**
+   - learner asks a brief clarifying question related to the current step
+   - current state does not change
+   - system answers, then resumes the same instructional atom
+
+2. **Side-topic interruption**
+   - learner asks a relevant but non-blocking question outside the immediate lesson step
+   - current flow is preserved
+   - question may be answered now if short, or parked for later if it would derail momentum
+
+3. **Hard interruption**
+   - learner stops responding, closes the session, switches topic, or requests to pause
+   - system transitions to `paused` and stores resumable context
+
+4. **Struggle interruption**
+   - learner frustration, repeated failure, or explicit confidence drop interrupts the current path
+   - system can interrupt the planned next step and route to `reinforce`
+
+#### Resume rules
+- Persist the last stable state, current topic, current outline item, current quiz batch, and unfinished step payload before acknowledging a pause.
+- On resume after a short gap, return to the prior state and restate the next action in one sentence.
+- On resume after a longer gap, route through `review` instead of dropping the learner back into a stale quiz or explanation.
+- If the learner left during obvious struggle, resume with `reinforce` or `review`, not straight back into the same failing question.
+
+#### Interruption guardrails
+- Never silently discard in-progress learner answers.
+- Never resume directly into a punitive-feeling quiz after a frustrating interruption.
+- Interruptions should preserve emotional continuity: the learner should feel remembered, not reset.
+- State changes caused by interruptions should be visible in session history for debugging and analytics.
+
 ## Initial implementation guidance
 - Implement these four modes as controlled values in session state.
 - Let the backend own mode persistence and transition decisions.
 - Let the frontend display simple user-facing labels and descriptions for each mode.
 - Avoid overcomplicating the first implementation with nested submodes.
-- Add richer interruption and deferred-question routing in the next checkpoint.
+- Start with the canonical transitions above before adding probabilistic routing.
