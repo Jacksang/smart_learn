@@ -3,8 +3,10 @@
 ## Status
 Completed checkpoints in this document:
 - Define encouraging feedback patterns
+- Define struggle recovery templates
+- Define progress language rules
 
-Remaining checkpoints will extend this document with struggle recovery templates, progress language rules, and final delivery notes.
+This document now covers the full D0.5 planning deliverable.
 
 ---
 
@@ -116,6 +118,133 @@ Patterns:
 Follow-up options:
 - "Ready for the next topic?"
 - "Want a short review before moving on?"
+
+---
+
+## Struggle recovery templates
+
+### 1. Confused after first miss
+Use when the learner misses a question and appears uncertain, but frustration is still low.
+
+Patterns:
+- "That one missed the mark, but we can fix it step by step."
+- "Not yet — let’s slow it down and isolate the key idea."
+- "You’re not far off. Let’s rebuild the concept from one smaller piece."
+- "That’s a normal place to get stuck. Let’s make the next step easier."
+
+Recovery moves:
+- restate the concept in simpler language
+- give one hint, not a full answer immediately
+- ask a smaller follow-up question
+
+### 2. Repeated misses on the same concept
+Use when the learner has already missed similar questions and confidence may be dropping.
+
+Patterns:
+- "This concept is still wobbly, so let’s switch to a simpler version and lock in the foundation."
+- "We’re seeing a pattern here, which is useful — it tells us exactly what to reinforce."
+- "Let’s pause the harder version and rebuild the core idea first."
+- "No problem. This just means we need a steadier ramp, not more pressure."
+
+Recovery moves:
+- reduce difficulty
+- switch from open recall to guided choice
+- show a worked example before the next attempt
+- mark the topic for reinforcement if instability continues
+
+### 3. Visible frustration or self-doubt
+Use when the learner expresses "I don’t get it," "I’m bad at this," or similar discouragement.
+
+Patterns:
+- "This is a hard moment, not a verdict on your ability."
+- "Struggling here does not mean you can’t learn it — it means we need a different angle."
+- "Let’s lower the pressure and get one small win first."
+- "You do not need to solve the whole thing at once. We only need the next clear step."
+
+Recovery moves:
+- explicitly separate current difficulty from identity
+- reduce scope to a single sub-skill
+- restore momentum with one easier success
+- avoid piling on extra explanation all at once
+
+### 4. Fatigue or overload during a session
+Use when errors suggest the learner is mentally saturated rather than conceptually lost.
+
+Patterns:
+- "Your effort is still there, but your signal looks overloaded. Let’s simplify."
+- "This may be a good point for a shorter step or a reset."
+- "We can keep going, but the next move should be lighter, not heavier."
+- "Let’s protect momentum instead of forcing a hard push right now."
+
+Recovery moves:
+- shorten the next task
+- swap to recap instead of new difficulty
+- offer a quick summary or checkpoint pause
+
+### 5. End-of-struggle recovery close
+Use after the learner regains footing and gets a smaller step right.
+
+Patterns:
+- "Good recovery — that smaller step helped, and now the concept is clearer."
+- "There we go. Rebuilding from the foundation worked."
+- "Nice reset. That’s the kind of recovery that leads to durable learning."
+- "You found the footing again. Now we can continue without rushing."
+
+Recovery goal:
+Turn struggle into evidence of progress, not evidence of failure.
+
+---
+
+## Progress language rules
+
+### Core rules
+- Describe learning as movement, not judgment.
+- Name what is improving before naming what still needs work.
+- Prefer stable, non-shaming labels over pass/fail identity language.
+- Tie progress language to observable behavior: recall, consistency, focus, recovery, and transfer.
+- Keep the wording honest; do not overpraise weak performance.
+
+### Preferred progress labels
+Use labels like:
+- `building` — early understanding exists but is not stable yet
+- `improving` — recent attempts are stronger than earlier ones
+- `steady` — correct performance is becoming consistent
+- `strong` — concept appears reliable across prompts
+- `needs_reinforcement` — not yet stable enough; revisit without shame
+
+Avoid labels like:
+- `bad`
+- `weak student`
+- `failing`
+- `hopeless`
+- `not smart enough`
+
+### Sentence construction rules
+Prefer these structures:
+- observation + encouragement + next step
+- progress signal + remaining gap + recovery path
+- effort recognition + concrete coaching
+
+Examples:
+- "You’re improving: the main idea is now correct, and we just need to stabilize the detail."
+- "This topic is still building, so let’s reinforce it with one simpler pass."
+- "Your recall is steadier than before. Next we’ll test whether it holds in a slightly different form."
+
+Avoid these structures:
+- blunt verdict only: "Wrong."
+- identity attack: "You’re bad at this."
+- fake hype disconnected from evidence: "Perfect!" when the answer is partial
+
+### Session-level progress summaries
+At the end of a block, summaries should:
+- identify 1–2 areas of strength
+- identify 1 area that still needs reinforcement
+- explain the recommended next step in plain language
+- preserve motivation without hiding reality
+
+Example summary shapes:
+- "Today you built a workable understanding of photosynthesis and improved recall on the energy-transfer steps. The weak spot is still the role of chlorophyll, so next time we should start with one short reinforcement question there."
+- "You stayed engaged through a difficult section and recovered after a rough start. Fractions are improving, but comparison questions still need another pass."
 
 ---
 

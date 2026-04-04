@@ -45,9 +45,9 @@ Rules for use:
 
 ### D0.5 Feedback and motivation template catalog
 - [x] Define encouraging feedback patterns
-- [ ] Define struggle recovery templates
-- [ ] Define progress language rules
-- [ ] Save artifact: `docs/FEEDBACK_TEMPLATE_CATALOG.md`
+- [x] Define struggle recovery templates
+- [x] Define progress language rules
+- [x] Save artifact: `docs/FEEDBACK_TEMPLATE_CATALOG.md`
 - [ ] Commit and push
 
 ---
