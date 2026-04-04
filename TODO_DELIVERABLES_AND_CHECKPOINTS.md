@@ -41,7 +41,7 @@ Rules for use:
 - [x] Define extraction pipeline expectations
 - [x] Define metadata storage rules
 - [x] Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
-- [ ] Commit and push
+- [x] Commit and push
 
 ### D0.5 Feedback and motivation template catalog
 - [ ] Define encouraging feedback patterns
