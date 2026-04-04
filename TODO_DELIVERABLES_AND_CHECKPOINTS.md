@@ -16,7 +16,7 @@ Rules for use:
 ### D0.1 PostgreSQL schema spec
 - [x] Draft schema entities and relationships
 - [x] Define table-by-table columns
-- [ ] Define enums/status fields
+- [x] Define enums/status fields
 - [ ] Define indexes and MVP scope notes
 - [ ] Save artifact: `docs/POSTGRESQL_SCHEMA_SPEC.md`
 - [ ] Commit and push

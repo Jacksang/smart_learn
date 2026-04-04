@@ -336,6 +336,130 @@ Notes:
 - supports Learn / Review / Quiz / Reinforce tracking
 - `motivation_state` can support later adaptive encouragement logic
 
+## Suggested enums / controlled value sets
+
+### users.role
+- `student`
+- `parent` (later)
+- `teacher` (later)
+- `admin` (later)
+
+### users.status
+- `active`
+- `paused`
+- `disabled`
+
+### learning_projects.status
+- `active`
+- `archived`
+- `completed`
+- `paused`
+
+### learning_projects.current_mode
+- `learn`
+- `review`
+- `quiz`
+- `reinforce`
+
+### source_materials.source_kind
+- `user_upload`
+- `pasted_text`
+- `system_base_knowledge`
+
+### source_materials.material_type
+- `text`
+- `pdf`
+- `docx`
+- `image`
+- `base_knowledge`
+- `csv` (later)
+- `excel` (later)
+- `ppt` (later)
+- `url` (later)
+- `transcript` (later)
+
+### outlines.generation_source
+- `mock_ai`
+- `manual`
+- `llm` (later)
+
+### outlines.status
+- `draft`
+- `active`
+- `superseded`
+- `archived`
+
+### outline_items.mastery_state
+- `strong`
+- `improving`
+- `building`
+- `needs_reinforcement`
+- `ready_for_review`
+
+### questions.question_type
+- `multiple_choice`
+- `short_answer`
+- `concept_recall`
+- `true_false` (later)
+
+### questions.difficulty_level
+- `easy`
+- `medium`
+- `hard`
+
+### questions.generation_source
+- `mock_ai`
+- `llm` (later)
+- `manual` (later)
+
+### questions.status
+- `active`
+- `retired`
+- `draft`
+
+### progress_snapshots.snapshot_type
+- `project`
+- `topic`
+- `session`
+
+### progress_snapshots.progress_state
+- `strong`
+- `improving`
+- `building`
+- `needs_reinforcement`
+- `ready_for_review`
+
+### deferred_questions.defer_reason
+- `too_deep`
+- `off_track`
+- `needs_later_context`
+- `student_requested_later`
+
+### deferred_questions.status
+- `deferred`
+- `revisited`
+- `resolved`
+- `abandoned`
+- `answered_now`
+
+### learning_sessions.mode
+- `learn`
+- `review`
+- `quiz`
+- `reinforce`
+
+### learning_sessions.status
+- `active`
+- `paused`
+- `completed`
+- `abandoned`
+
+## Enum design notes
+- MVP can implement these as PostgreSQL enums or constrained varchar/text columns.
+- For faster iteration, constrained text/varchar with application validation may be simpler initially.
+- Values such as `strong`, `improving`, `building`, and `needs_reinforcement` intentionally support non-shaming progress language.
+- `source_kind` and `material_type` should remain separate because one tells where content came from and the other tells what format it is.
+
 ## Key business-rule mapping
 - Base knowledge fallback -> `source_materials`
 - Material weighting -> `source_materials`
