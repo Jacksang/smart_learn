@@ -1,6 +1,8 @@
 const USER_WEIGHT_DEFAULT = 1.25;
 const SYSTEM_WEIGHT_DEFAULT = 0.75;
 const NEUTRAL_WEIGHT_DEFAULT = 1.0;
+const MIN_USER_MATERIAL_COUNT = 1;
+const MIN_USER_MATERIAL_TEXT_CHARS = 200;
 
 const DEFAULT_WEIGHT_RULES = Object.freeze({
   userProvided: {
@@ -102,14 +104,69 @@ function decorateMaterialWithWeight(material) {
   };
 }
 
+function resolveMaterialText(material = {}) {
+  return [material.extracted_text, material.raw_text, material.extractedText, material.rawText]
+    .find((value) => typeof value === 'string') || '';
+}
+
+function isSystemGeneratedMaterial(material = {}) {
+  return SYSTEM_SOURCE_KINDS.has(material.sourceKind || material.source_kind)
+    || (material.materialType || material.material_type) === 'base_knowledge';
+}
+
+function isUserMaterialCandidate(material = {}) {
+  return material.isActive !== false
+    && !isSystemGeneratedMaterial(material)
+    && resolveMaterialText(material).trim().length > 0;
+}
+
+function evaluateBaseKnowledgeFallback(materials = []) {
+  const activeUserMaterials = materials.filter(isUserMaterialCandidate);
+  const totalUserTextChars = activeUserMaterials.reduce(
+    (sum, material) => sum + resolveMaterialText(material).trim().length,
+    0
+  );
+
+  if (activeUserMaterials.length < MIN_USER_MATERIAL_COUNT) {
+    return {
+      shouldFallback: true,
+      reason: 'missing_user_material',
+      usableUserMaterialCount: activeUserMaterials.length,
+      totalUserTextChars,
+    };
+  }
+
+  if (totalUserTextChars < MIN_USER_MATERIAL_TEXT_CHARS) {
+    return {
+      shouldFallback: true,
+      reason: 'insufficient_user_material',
+      usableUserMaterialCount: activeUserMaterials.length,
+      totalUserTextChars,
+    };
+  }
+
+  return {
+    shouldFallback: false,
+    reason: null,
+    usableUserMaterialCount: activeUserMaterials.length,
+    totalUserTextChars,
+  };
+}
+
 module.exports = {
   USER_WEIGHT_DEFAULT,
   SYSTEM_WEIGHT_DEFAULT,
   NEUTRAL_WEIGHT_DEFAULT,
+  MIN_USER_MATERIAL_COUNT,
+  MIN_USER_MATERIAL_TEXT_CHARS,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
   prepareMaterialCreateInput,
   prepareMaterialUpdateInput,
   decorateMaterialWithWeight,
+  resolveMaterialText,
+  isSystemGeneratedMaterial,
+  isUserMaterialCandidate,
+  evaluateBaseKnowledgeFallback,
 };

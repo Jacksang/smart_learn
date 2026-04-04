@@ -2,12 +2,18 @@ const {
   USER_WEIGHT_DEFAULT,
   SYSTEM_WEIGHT_DEFAULT,
   NEUTRAL_WEIGHT_DEFAULT,
+  MIN_USER_MATERIAL_COUNT,
+  MIN_USER_MATERIAL_TEXT_CHARS,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
   prepareMaterialCreateInput,
   prepareMaterialUpdateInput,
   decorateMaterialWithWeight,
+  resolveMaterialText,
+  isSystemGeneratedMaterial,
+  isUserMaterialCandidate,
+  evaluateBaseKnowledgeFallback,
 } = require('./service');
 
 describe('materials service weighting', () => {
@@ -102,6 +108,119 @@ describe('materials service weighting', () => {
       materialType: 'base_knowledge',
       weight: SYSTEM_WEIGHT_DEFAULT,
       priority: 'low',
+    });
+  });
+
+  test('extracts normalized text from extracted_text before raw_text aliases', () => {
+    expect(
+      resolveMaterialText({
+        extracted_text: 'Normalized text',
+        raw_text: 'Raw fallback',
+      })
+    ).toBe('Normalized text');
+    expect(resolveMaterialText({ rawText: 'Camel fallback' })).toBe('Camel fallback');
+  });
+
+  test('identifies system-generated base knowledge materials for fallback exclusion', () => {
+    expect(isSystemGeneratedMaterial({ source_kind: 'generated' })).toBe(true);
+    expect(isSystemGeneratedMaterial({ materialType: 'base_knowledge' })).toBe(true);
+    expect(isSystemGeneratedMaterial({ sourceKind: 'upload', materialType: 'pdf' })).toBe(false);
+  });
+
+  test('counts only active non-system materials with text as usable user material candidates', () => {
+    expect(
+      isUserMaterialCandidate({ sourceKind: 'upload', extracted_text: '  useful text  ', isActive: true })
+    ).toBe(true);
+    expect(isUserMaterialCandidate({ sourceKind: 'generated', extracted_text: 'system text' })).toBe(
+      false
+    );
+    expect(isUserMaterialCandidate({ sourceKind: 'upload', extracted_text: '   ' })).toBe(false);
+    expect(isUserMaterialCandidate({ sourceKind: 'upload', extracted_text: 'text', isActive: false })).toBe(
+      false
+    );
+  });
+
+  test('triggers base knowledge fallback when no usable active user material exists', () => {
+    expect(evaluateBaseKnowledgeFallback([])).toEqual({
+      shouldFallback: true,
+      reason: 'missing_user_material',
+      usableUserMaterialCount: 0,
+      totalUserTextChars: 0,
+    });
+
+    expect(
+      evaluateBaseKnowledgeFallback([
+        {
+          sourceKind: 'generated',
+          materialType: 'base_knowledge',
+          extracted_text: 'system supplied notes',
+        },
+      ])
+    ).toEqual({
+      shouldFallback: true,
+      reason: 'missing_user_material',
+      usableUserMaterialCount: 0,
+      totalUserTextChars: 0,
+    });
+  });
+
+  test('triggers fallback when user material exists but is still too thin for MVP use', () => {
+    const thinText = 'a'.repeat(MIN_USER_MATERIAL_TEXT_CHARS - 1);
+
+    expect(
+      evaluateBaseKnowledgeFallback([
+        {
+          sourceKind: 'upload',
+          extracted_text: thinText,
+          isActive: true,
+        },
+      ])
+    ).toEqual({
+      shouldFallback: true,
+      reason: 'insufficient_user_material',
+      usableUserMaterialCount: MIN_USER_MATERIAL_COUNT,
+      totalUserTextChars: MIN_USER_MATERIAL_TEXT_CHARS - 1,
+    });
+  });
+
+  test('does not trigger fallback once active user material reaches the MVP sufficiency threshold', () => {
+    const sufficientText = 'a'.repeat(MIN_USER_MATERIAL_TEXT_CHARS);
+
+    expect(
+      evaluateBaseKnowledgeFallback([
+        {
+          sourceKind: 'upload',
+          extracted_text: sufficientText,
+          isActive: true,
+        },
+      ])
+    ).toEqual({
+      shouldFallback: false,
+      reason: null,
+      usableUserMaterialCount: MIN_USER_MATERIAL_COUNT,
+      totalUserTextChars: MIN_USER_MATERIAL_TEXT_CHARS,
+    });
+  });
+
+  test('allows multiple active user materials to satisfy sufficiency in aggregate', () => {
+    expect(
+      evaluateBaseKnowledgeFallback([
+        {
+          source_kind: 'file',
+          extracted_text: 'a'.repeat(120),
+          is_active: true,
+        },
+        {
+          sourceKind: 'manual',
+          rawText: 'b'.repeat(80),
+          isActive: true,
+        },
+      ])
+    ).toEqual({
+      shouldFallback: false,
+      reason: null,
+      usableUserMaterialCount: 2,
+      totalUserTextChars: 200,
     });
   });
 
