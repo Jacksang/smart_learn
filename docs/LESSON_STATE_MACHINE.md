@@ -3,8 +3,11 @@
 ## Status
 Completed checkpoints in this document:
 - Define Learn / Review / Quiz / Reinforce states
+- Define transitions and interruption handling
+- Define deferred-question behavior
+- Save artifact: `docs/LESSON_STATE_MACHINE.md`
 
-Remaining checkpoints will extend this document with transitions, interruption handling, deferred-question behavior, and final delivery notes.
+This document is now the delivery artifact for D0.3.
 
 ---
 

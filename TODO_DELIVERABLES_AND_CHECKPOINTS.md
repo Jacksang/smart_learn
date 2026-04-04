@@ -33,7 +33,7 @@ Rules for use:
 - [x] Define Learn / Review / Quiz / Reinforce states
 - [x] Define transitions and interruption handling
 - [x] Define deferred-question behavior
-- [ ] Save artifact: `docs/LESSON_STATE_MACHINE.md`
+- [x] Save artifact: `docs/LESSON_STATE_MACHINE.md`
 - [ ] Commit and push
 
 ### D0.4 File ingestion strategy
