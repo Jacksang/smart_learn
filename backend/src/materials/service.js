@@ -5,10 +5,20 @@ const MIN_USER_MATERIAL_COUNT = 1;
 const MIN_USER_MATERIAL_TEXT_CHARS = 200;
 const BASE_KNOWLEDGE_FALLBACK_DECISION_POINT = 'project_material_preflight';
 
+const BASE_KNOWLEDGE_FALLBACK_REASONS = Object.freeze({
+  MISSING_USER_MATERIAL: 'missing_user_material',
+  INSUFFICIENT_USER_MATERIAL: 'insufficient_user_material',
+});
+
 const BASE_KNOWLEDGE_FALLBACK_RESPONSE = Object.freeze({
   action: 'create_base_knowledge',
   decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
   targetRoute: 'POST /api/projects/:projectId/materials/base-knowledge',
+});
+
+const USE_PROJECT_MATERIALS_RESPONSE = Object.freeze({
+  action: 'use_project_materials',
+  decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
 });
 
 const DEFAULT_WEIGHT_RULES = Object.freeze({
@@ -137,7 +147,7 @@ function evaluateBaseKnowledgeFallback(materials = []) {
   if (activeUserMaterials.length < MIN_USER_MATERIAL_COUNT) {
     return {
       shouldFallback: true,
-      reason: 'missing_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.MISSING_USER_MATERIAL,
       usableUserMaterialCount: activeUserMaterials.length,
       totalUserTextChars,
     };
@@ -146,7 +156,7 @@ function evaluateBaseKnowledgeFallback(materials = []) {
   if (totalUserTextChars < MIN_USER_MATERIAL_TEXT_CHARS) {
     return {
       shouldFallback: true,
-      reason: 'insufficient_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.INSUFFICIENT_USER_MATERIAL,
       usableUserMaterialCount: activeUserMaterials.length,
       totalUserTextChars,
     };
@@ -174,8 +184,7 @@ function buildBaseKnowledgeFallbackDecision(materials = [], options = {}) {
           reason: evaluation.reason,
         }
       : {
-          action: 'use_project_materials',
-          decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+          ...USE_PROJECT_MATERIALS_RESPONSE,
           projectId,
           reason: null,
         },
@@ -189,7 +198,9 @@ module.exports = {
   MIN_USER_MATERIAL_COUNT,
   MIN_USER_MATERIAL_TEXT_CHARS,
   BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+  BASE_KNOWLEDGE_FALLBACK_REASONS,
   BASE_KNOWLEDGE_FALLBACK_RESPONSE,
+  USE_PROJECT_MATERIALS_RESPONSE,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,

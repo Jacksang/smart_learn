@@ -5,7 +5,9 @@ const {
   MIN_USER_MATERIAL_COUNT,
   MIN_USER_MATERIAL_TEXT_CHARS,
   BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+  BASE_KNOWLEDGE_FALLBACK_REASONS,
   BASE_KNOWLEDGE_FALLBACK_RESPONSE,
+  USE_PROJECT_MATERIALS_RESPONSE,
   DEFAULT_WEIGHT_RULES,
   inferDefaultWeight,
   normalizeWeight,
@@ -143,10 +145,26 @@ describe('materials service weighting', () => {
     );
   });
 
+  test('exposes explicit fallback reason and response contracts for MVP callers', () => {
+    expect(BASE_KNOWLEDGE_FALLBACK_REASONS).toEqual({
+      MISSING_USER_MATERIAL: 'missing_user_material',
+      INSUFFICIENT_USER_MATERIAL: 'insufficient_user_material',
+    });
+    expect(BASE_KNOWLEDGE_FALLBACK_RESPONSE).toEqual({
+      action: 'create_base_knowledge',
+      decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+      targetRoute: 'POST /api/projects/:projectId/materials/base-knowledge',
+    });
+    expect(USE_PROJECT_MATERIALS_RESPONSE).toEqual({
+      action: 'use_project_materials',
+      decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+    });
+  });
+
   test('triggers base knowledge fallback when no usable active user material exists', () => {
     expect(evaluateBaseKnowledgeFallback([])).toEqual({
       shouldFallback: true,
-      reason: 'missing_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.MISSING_USER_MATERIAL,
       usableUserMaterialCount: 0,
       totalUserTextChars: 0,
     });
@@ -161,7 +179,7 @@ describe('materials service weighting', () => {
       ])
     ).toEqual({
       shouldFallback: true,
-      reason: 'missing_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.MISSING_USER_MATERIAL,
       usableUserMaterialCount: 0,
       totalUserTextChars: 0,
     });
@@ -180,7 +198,7 @@ describe('materials service weighting', () => {
       ])
     ).toEqual({
       shouldFallback: true,
-      reason: 'insufficient_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.INSUFFICIENT_USER_MATERIAL,
       usableUserMaterialCount: MIN_USER_MATERIAL_COUNT,
       totalUserTextChars: MIN_USER_MATERIAL_TEXT_CHARS - 1,
     });
@@ -232,14 +250,14 @@ describe('materials service weighting', () => {
       buildBaseKnowledgeFallbackDecision([], { projectId: 'project-123' })
     ).toEqual({
       shouldFallback: true,
-      reason: 'missing_user_material',
+      reason: BASE_KNOWLEDGE_FALLBACK_REASONS.MISSING_USER_MATERIAL,
       usableUserMaterialCount: 0,
       totalUserTextChars: 0,
       decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
       response: {
         ...BASE_KNOWLEDGE_FALLBACK_RESPONSE,
         projectId: 'project-123',
-        reason: 'missing_user_material',
+        reason: BASE_KNOWLEDGE_FALLBACK_REASONS.MISSING_USER_MATERIAL,
       },
     });
   });
@@ -263,8 +281,7 @@ describe('materials service weighting', () => {
       totalUserTextChars: MIN_USER_MATERIAL_TEXT_CHARS,
       decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
       response: {
-        action: 'use_project_materials',
-        decisionPoint: BASE_KNOWLEDGE_FALLBACK_DECISION_POINT,
+        ...USE_PROJECT_MATERIALS_RESPONSE,
         projectId: 'project-123',
         reason: null,
       },
