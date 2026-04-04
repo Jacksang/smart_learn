@@ -7,7 +7,7 @@ This document explains how to prepare a local PostgreSQL database for the Smart 
 - Smart Learn is PostgreSQL-only now.
 - MongoDB/Mongoose is no longer part of the runtime plan.
 - Schema bootstrap is an explicit setup step; it is **not** run automatically on normal server startup.
-- The canonical baseline schema lives at `backend/db/schema/001_baseline.sql`.
+- The schema currently boots in numbered order: `backend/db/schema/001_baseline.sql` first, then `backend/db/schema/002_outline_tables.sql`.
 
 ## 1. Create a PostgreSQL database
 Example using `psql` as a local superuser:
@@ -58,8 +58,8 @@ psql -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE smartlearn TO smartlearn;"
 
 You may substitute a different role/password pair as long as `DB_USER` and `DB_PASSWORD` match.
 
-## 4. Apply the baseline schema
-Run the committed SQL file directly with `psql`:
+## 4. Apply the committed schema files
+Run the committed SQL files in migration order with `psql`:
 
 ```bash
 PGPASSWORD="$DB_PASSWORD" psql \
@@ -68,19 +68,29 @@ PGPASSWORD="$DB_PASSWORD" psql \
   -U "$DB_USER" \
   -d "$DB_NAME" \
   -f backend/db/schema/001_baseline.sql
+
+PGPASSWORD="$DB_PASSWORD" psql \
+  -h "$DB_HOST" \
+  -p "$DB_PORT" \
+  -U "$DB_USER" \
+  -d "$DB_NAME" \
+  -f backend/db/schema/002_outline_tables.sql
 ```
 
-What this creates:
+What `001_baseline.sql` creates:
 - `users`
 - `learning_projects`
 - `source_materials`
-- `outlines`
-- `outline_items`
 - `questions`
 - `answer_attempts`
 - `progress_snapshots`
 - `deferred_questions`
 - `learning_sessions`
+
+What `002_outline_tables.sql` adds:
+- `outlines`
+- `outline_items`
+- dependent foreign keys from baseline tables back to outline entities
 
 It also installs:
 - `pgcrypto` for UUID generation
@@ -117,4 +127,4 @@ npm run backend:dev
 - The backend startup path now uses PostgreSQL only; it no longer depends on MongoDB/Mongoose.
 - In this workspace, startup still fails if PostgreSQL is not running or not reachable (for example `ECONNREFUSED 127.0.0.1:5432`).
 - During the remaining schema/runtime cutover window, endpoints that hit missing PostgreSQL tables/columns/foreign keys return `503 Service Unavailable` with an explicit MVP-readiness message instead of an opaque `500`.
-- Apply `backend/db/schema/001_baseline.sql` before normal backend testing so the PostgreSQL-only runtime has the expected baseline schema available.
+- Apply `backend/db/schema/001_baseline.sql` and then `backend/db/schema/002_outline_tables.sql` before normal backend testing so the PostgreSQL-only runtime has the expected schema chain available.
