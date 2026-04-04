@@ -4,6 +4,10 @@ jest.mock('./repository', () => ({
   updateMaterialForUser: jest.fn(),
 }));
 
+jest.mock('../outline/service', () => ({
+  refreshOutline: jest.fn(),
+}));
+
 jest.mock('./service', () => ({
   prepareMaterialCreateInput: jest.fn((payload) => ({ ...payload, prepared: true })),
   prepareMaterialUpdateInput: jest.fn((updates) => ({ ...updates, prepared: true })),
@@ -34,6 +38,7 @@ const {
   decorateMaterialWithWeight,
   buildBaseKnowledgeFallbackDecision,
 } = require('./service');
+const { refreshOutline } = require('../outline/service');
 const controller = require('./controller');
 
 function createRes() {
@@ -106,7 +111,7 @@ describe('materials controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('creates a project material with normalized input and decorated output', async () => {
+  test('creates a project material with normalized input, refreshes outline, and returns decorated output', async () => {
     const createdMaterial = {
       id: 'material-1',
       project_id: 'project-1',
@@ -163,6 +168,12 @@ describe('materials controller', () => {
       prepared: true,
       userId: 'user-1',
     });
+    expect(refreshOutline).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+      trigger: 'material_created',
+      materialId: 'material-1',
+    });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       message: 'Material created',
@@ -184,6 +195,7 @@ describe('materials controller', () => {
 
     expect(prepareMaterialCreateInput).not.toHaveBeenCalled();
     expect(createMaterialForUser).not.toHaveBeenCalled();
+    expect(refreshOutline).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       message: 'sourceKind/source_kind and materialType/material_type are required',
@@ -207,12 +219,13 @@ describe('materials controller', () => {
 
     await controller.createProjectMaterial(req, res, next);
 
+    expect(refreshOutline).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: 'Project not found' });
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('creates a base-knowledge material with fixed fallback source metadata', async () => {
+  test('creates a base-knowledge material, refreshes outline, and returns fixed fallback source metadata', async () => {
     const createdMaterial = {
       id: 'material-2',
       project_id: 'project-1',
@@ -256,6 +269,12 @@ describe('materials controller', () => {
         userId: 'user-1',
       })
     );
+    expect(refreshOutline).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+      trigger: 'material_created',
+      materialId: 'material-2',
+    });
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith({
       message: 'Base knowledge material created',
@@ -264,9 +283,10 @@ describe('materials controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('updates a material using normalized snake_case fields and decorated output', async () => {
+  test('updates a material, refreshes outline, and returns decorated output', async () => {
     const updatedMaterial = {
       id: 'material-1',
+      project_id: 'project-1',
       title: 'Updated notes',
       weight: 1.5,
     };
@@ -299,6 +319,12 @@ describe('materials controller', () => {
       is_active: false,
       prepared: true,
     });
+    expect(refreshOutline).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+      trigger: 'material_updated',
+      materialId: 'material-1',
+    });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       message: 'Material updated',
@@ -320,6 +346,7 @@ describe('materials controller', () => {
 
     await controller.updateMaterial(req, res, next);
 
+    expect(refreshOutline).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: 'Material not found' });
     expect(next).not.toHaveBeenCalled();

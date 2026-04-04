@@ -108,6 +108,36 @@ function normalizeCreatePayload(payload = {}) {
   };
 }
 
+function buildOutlineItemsFromMaterials(materials = []) {
+  return materials
+    .filter((material) => material && material.is_active !== false)
+    .map((material, index) => {
+      const title = [
+        material.title,
+        material.original_file_name,
+        material.originalFileName,
+        material.material_type,
+        material.materialType,
+        material.source_kind,
+        material.sourceKind,
+        `Material ${index + 1}`,
+      ].find((value) => isNonEmptyString(value));
+
+      const contentSource = [
+        material.extracted_text,
+        material.extractedText,
+        material.raw_text,
+        material.rawText,
+      ].find((value) => typeof value === 'string' && value.trim() !== '');
+
+      return {
+        title,
+        level: 1,
+        content: contentSource ? contentSource.trim().slice(0, 500) : null,
+      };
+    });
+}
+
 function prepareOutlineCreateInput(payload = {}) {
   const validation = validateOutlineCreatePayload(payload);
 
@@ -146,6 +176,27 @@ async function createOutline(payload, deps = {}) {
   });
 }
 
+async function refreshOutline(payload, deps = {}) {
+  const repository = deps.repository || require('./repository');
+  const materialsRepository = deps.materialsRepository || require('../materials/repository');
+  const projectsRepository = deps.projectsRepository || require('../projects/repository');
+
+  const project = await projectsRepository.findByIdForUser(payload.projectId, payload.userId);
+  if (!project) {
+    return null;
+  }
+
+  const outline = await repository.findCurrentByProjectForUser(payload.projectId, payload.userId);
+  if (!outline) {
+    return null;
+  }
+
+  const materials = await materialsRepository.listByProjectForUser(payload.projectId, payload.userId);
+  const generatedItems = flattenItems(buildOutlineItemsFromMaterials(materials));
+
+  return repository.replaceOutlineItems(outline.id, generatedItems);
+}
+
 module.exports = {
   STATUS_VALUES,
   VALID_LEVELS,
@@ -153,5 +204,7 @@ module.exports = {
   flattenItems,
   normalizeCreatePayload,
   prepareOutlineCreateInput,
+  buildOutlineItemsFromMaterials,
   createOutline,
+  refreshOutline,
 };

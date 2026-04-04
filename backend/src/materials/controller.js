@@ -9,6 +9,7 @@ const {
   decorateMaterialWithWeight,
   buildBaseKnowledgeFallbackDecision,
 } = require('./service');
+const { refreshOutline } = require('../outline/service');
 
 function normalizeMaterialCreateBody(body = {}, projectId) {
   return {
@@ -92,6 +93,13 @@ exports.createProjectMaterial = async (req, res, next) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    await refreshOutline({
+      projectId: material.project_id,
+      userId: req.user.id,
+      trigger: 'material_created',
+      materialId: material.id,
+    });
+
     return res.status(201).json({
       message: 'Material created',
       material: decorateMaterialWithWeight(material),
@@ -122,6 +130,13 @@ exports.createBaseKnowledgeMaterial = async (req, res, next) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    await refreshOutline({
+      projectId: material.project_id,
+      userId: req.user.id,
+      trigger: 'material_created',
+      materialId: material.id,
+    });
+
     return res.status(201).json({
       message: 'Base knowledge material created',
       material: decorateMaterialWithWeight(material),
@@ -140,6 +155,13 @@ exports.updateMaterial = async (req, res, next) => {
     if (!material) {
       return res.status(404).json({ message: 'Material not found' });
     }
+
+    await refreshOutline({
+      projectId: material.project_id,
+      userId: req.user.id,
+      trigger: 'material_updated',
+      materialId: material.id,
+    });
 
     return res.status(200).json({
       message: 'Material updated',

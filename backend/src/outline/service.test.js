@@ -61,4 +61,100 @@ describe('outline service', () => {
       'items[0].children must be an array',
     ]);
   });
+
+  test('buildOutlineItemsFromMaterials creates deterministic top-level items from active materials', () => {
+    expect(service.buildOutlineItemsFromMaterials([
+      {
+        title: 'Chapter 1',
+        extracted_text: '  Intro to cells  ',
+        is_active: true,
+      },
+      {
+        original_file_name: 'notes.md',
+        raw_text: '  Raw fallback text  ',
+      },
+      {
+        title: 'Archived',
+        extracted_text: 'Should be ignored',
+        is_active: false,
+      },
+    ])).toEqual([
+      {
+        title: 'Chapter 1',
+        level: 1,
+        content: 'Intro to cells',
+      },
+      {
+        title: 'notes.md',
+        level: 1,
+        content: 'Raw fallback text',
+      },
+    ]);
+  });
+
+  test('refreshOutline replaces the current project outline items when materials change', async () => {
+    const repository = {
+      findCurrentByProjectForUser: jest.fn().mockResolvedValue({ id: 'outline-1' }),
+      replaceOutlineItems: jest.fn().mockResolvedValue({ id: 'outline-1', status: 'draft' }),
+    };
+    const materialsRepository = {
+      listByProjectForUser: jest.fn().mockResolvedValue([
+        { title: 'Lesson 1', extracted_text: 'Basics' },
+        { original_file_name: 'lesson-2.pdf', raw_text: 'Advanced topics' },
+      ]),
+    };
+    const projectsRepository = {
+      findByIdForUser: jest.fn().mockResolvedValue({ id: 'project-1' }),
+    };
+
+    const result = await service.refreshOutline(
+      { projectId: 'project-1', userId: 'user-1', trigger: 'material_updated' },
+      { repository, materialsRepository, projectsRepository }
+    );
+
+    expect(projectsRepository.findByIdForUser).toHaveBeenCalledWith('project-1', 'user-1');
+    expect(repository.findCurrentByProjectForUser).toHaveBeenCalledWith('project-1', 'user-1');
+    expect(materialsRepository.listByProjectForUser).toHaveBeenCalledWith('project-1', 'user-1');
+    expect(repository.replaceOutlineItems).toHaveBeenCalledWith('outline-1', [
+      {
+        clientKey: 'item-1',
+        parentClientKey: null,
+        level: 1,
+        title: 'Lesson 1',
+        content: 'Basics',
+        orderIndex: 0,
+      },
+      {
+        clientKey: 'item-2',
+        parentClientKey: null,
+        level: 1,
+        title: 'lesson-2.pdf',
+        content: 'Advanced topics',
+        orderIndex: 1,
+      },
+    ]);
+    expect(result).toEqual({ id: 'outline-1', status: 'draft' });
+  });
+
+  test('refreshOutline is a no-op when the project has no outline yet', async () => {
+    const repository = {
+      findCurrentByProjectForUser: jest.fn().mockResolvedValue(null),
+      replaceOutlineItems: jest.fn(),
+    };
+    const materialsRepository = {
+      listByProjectForUser: jest.fn(),
+    };
+    const projectsRepository = {
+      findByIdForUser: jest.fn().mockResolvedValue({ id: 'project-1' }),
+    };
+
+    const result = await service.refreshOutline(
+      { projectId: 'project-1', userId: 'user-1', trigger: 'material_created' },
+      { repository, materialsRepository, projectsRepository }
+    );
+
+    expect(result).toBeNull();
+    expect(materialsRepository.listByProjectForUser).not.toHaveBeenCalled();
+    expect(repository.replaceOutlineItems).not.toHaveBeenCalled();
+  });
 });

@@ -186,6 +186,27 @@ async function findById(outlineId) {
   return mapOutlineRow(result.rows[0]);
 }
 
+async function findCurrentByProjectForUser(projectId, userId) {
+  const result = await db.query(
+    `SELECT o.${OUTLINE_SELECT}
+     FROM outlines o
+     INNER JOIN learning_projects p ON p.id = o.project_id
+     WHERE o.project_id = $1
+       AND p.user_id = $2
+       AND (
+         p.current_outline_id = o.id
+         OR p.current_outline_id IS NULL
+       )
+     ORDER BY CASE WHEN p.current_outline_id = o.id THEN 0 ELSE 1 END,
+              o.updated_at DESC,
+              o.created_at DESC
+     LIMIT 1`,
+    [projectId, userId]
+  );
+
+  return mapOutlineRow(result.rows[0]);
+}
+
 async function findItemsByOutlineId(outlineId) {
   return queryOutlineItems(
     `SELECT ${ITEM_SELECT}
@@ -212,6 +233,73 @@ async function updateStatus(outlineId, status) {
   return mapOutlineRow(result.rows[0]);
 }
 
+async function replaceOutlineItems(outlineId, items = []) {
+  const client = await db.pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `DELETE FROM outline_items
+       WHERE outline_id = $1`,
+      [outlineId]
+    );
+
+    if (items.length > 0) {
+      const idMap = new Map();
+      items.forEach((item) => {
+        idMap.set(item.clientKey, randomUUID());
+      });
+
+      const values = [];
+      const params = [];
+
+      items.forEach((item) => {
+        params.push(
+          idMap.get(item.clientKey),
+          outlineId,
+          item.parentClientKey ? idMap.get(item.parentClientKey) : null,
+          item.level,
+          item.title,
+          item.content,
+          item.orderIndex
+        );
+
+        const base = params.length - 6;
+        values.push(`($${base}, $${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6})`);
+      });
+
+      await client.query(
+        `INSERT INTO outline_items (
+          id,
+          outline_id,
+          parent_item_id,
+          level,
+          title,
+          content,
+          order_index
+        ) VALUES ${values.join(', ')}`,
+        params
+      );
+    }
+
+    const outlineResult = await client.query(
+      `UPDATE outlines
+       SET status = 'draft', updated_at = NOW()
+       WHERE id = $1
+       RETURNING ${OUTLINE_SELECT}`,
+      [outlineId]
+    );
+
+    await client.query('COMMIT');
+    return mapOutlineRow(outlineResult.rows[0]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function deleteOutline(outlineId) {
   const result = await db.query(
     `DELETE FROM outlines
@@ -236,7 +324,9 @@ module.exports = {
   listByUser,
   createOutlineForUser,
   findById,
+  findCurrentByProjectForUser,
   findItemsByOutlineId,
   updateStatus,
+  replaceOutlineItems,
   deleteOutline,
 };
