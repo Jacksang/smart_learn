@@ -137,6 +137,63 @@ Those belong in later ingestion phases.
 
 ---
 
+## Extraction pipeline expectations
+
+### Pipeline stages
+The MVP extraction pipeline should follow a predictable state machine:
+1. **accept** — validate request, file type, and file size
+2. **store** — save the raw upload or direct text payload reference
+3. **classify** — determine source kind, material type, and extraction route
+4. **extract** — run parser or OCR to obtain raw text
+5. **normalize** — clean whitespace, remove obvious parser noise, and standardize encoding
+6. **assess** — record extraction quality, text length, and failure status
+7. **persist** — save extracted text and metadata on the material record
+8. **trigger downstream work** — allow outline refresh or regeneration decisions
+
+### Extraction behavior by format
+- **Text/TXT:** no heavy extraction step; normalize and persist immediately.
+- **PDF:** attempt text-layer extraction first; use OCR only when the PDF appears scanned or text extraction yields insufficient content.
+- **DOCX:** extract paragraphs in document order and collapse formatting into plain text.
+- **Image:** send directly to OCR, then normalize the OCR output.
+
+### Output contract for every extraction job
+Every ingestion attempt should produce a structured result containing at least:
+- `status` (`pending`, `processed`, `partial`, `failed`)
+- `extractor_type` (`direct_text`, `pdf_text`, `docx`, `ocr_image`, `ocr_pdf`, `base_knowledge`)
+- `extracted_text_length`
+- `quality_signal` or confidence indicator when available
+- `failure_reason` when extraction is incomplete or failed
+
+### Reliability expectations
+- Extraction should be asynchronous-capable even if MVP initially performs it inline.
+- Raw uploads should remain available for retry if a parser improves later.
+- Parsing failures should not delete the uploaded file reference.
+- Timeout, parser crash, or OCR failure should produce a machine-readable failure state.
+- Downstream outline generation must ignore materials whose extraction status is still `pending` or `failed`, unless the user explicitly overrides.
+
+### Normalization expectations
+Normalization should be conservative. The MVP should:
+- preserve the original wording as much as possible
+- collapse repeated whitespace
+- remove null bytes and obvious binary garbage
+- keep paragraph breaks when possible
+- avoid aggressive rewriting or summarization during ingestion
+
+Ingestion is for faithful extraction, not interpretation.
+
+### Low-quality extraction rules
+If extracted text is suspiciously weak, the system should mark the material as `partial` or `failed` instead of treating it as good input. Triggers may include:
+- extremely short extracted text for a large file
+- OCR confidence below an acceptable threshold
+- parser output dominated by symbols or layout garbage
+- empty text after normalization
+
+### Operational expectations
+- Prefer fewer stable parsers over many brittle ones.
+- Log extraction errors with enough internal detail to debug parser/tool failures.
+- Do not expose raw stack traces to end users.
+- Keep extraction idempotent where practical so retries do not duplicate material records.
+
 ## Architecture direction
 MVP ingestion should be modeled as a two-stage flow:
 1. file acceptance and storage
@@ -145,6 +202,5 @@ MVP ingestion should be modeled as a two-stage flow:
 This keeps upload reliability separate from parser reliability and makes retries easier.
 
 Later checkpoints in this document will define:
-- extraction pipeline expectations
 - metadata storage rules
 - artifact completion details

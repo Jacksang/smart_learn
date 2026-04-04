@@ -38,7 +38,7 @@ Rules for use:
 
 ### D0.4 File ingestion strategy
 - [x] Define MVP support for text / PDF / DOCX / image OCR
-- [ ] Define extraction pipeline expectations
+- [x] Define extraction pipeline expectations
 - [ ] Define metadata storage rules
 - [ ] Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
 - [ ] Commit and push
