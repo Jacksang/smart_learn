@@ -68,9 +68,10 @@ Rules for use:
 - [x] Implement material weighting rules
 - [x] Implement base knowledge fallback trigger
 - [x] Save artifact: working routes + tests
-- [ ] Commit and push
+- [x] Commit and push
   - Progress sync (2026-04-04): D1.2.A-F are complete in `D1.2_PROJECT_AND_MATERIAL_MANAGEMENT_SUBCHECKLIST.md`, including runtime/schema audit notes in `docs/D1.2_RUNTIME_SCHEMA_ALIGNMENT_AUDIT.md`, PostgreSQL-backed `backend/src/projects/*` and `backend/src/materials/*` repository/controller/router modules, material weighting and fallback service coverage, mounted `/api/projects` + `/api/materials` routes, and verified Jest/live PostgreSQL route-flow artifacts.
   - Parent checkpoint sync (2026-04-04): Marked the D1.2 implementation/artifact checkpoints complete in this parent file after confirming D1.2.A-G evidence exists; only the final D1.2 closeout commit/push remains open.
+  - Closeout note (2026-04-04): Completed the parent D1.2 closeout commit/push after the sub-checklist had already been closed and pushed.
 
 ### D1.3 Outline generation flow
 - [ ] Implement outline creation endpoint
@@ -162,4 +163,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D1.2 via `D1.2_PROJECT_AND_MATERIAL_MANAGEMENT_SUBCHECKLIST.md`
+- [ ] Start D1.3 via a new outline-generation sub-checklist
