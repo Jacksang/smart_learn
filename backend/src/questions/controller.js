@@ -1,35 +1,34 @@
-const { listQuestions, createQuestion } = require('./repository');
+const { listByProjectForUser, findByIdForProjectAndUser } = require('./repository');
 
-exports.listQuestions = async (req, res, next) => {
+exports.listProjectQuestions = async (req, res, next) => {
   try {
-    const questions = await listQuestions({
+    const questions = await listByProjectForUser({
+      projectId: req.params.projectId,
       userId: req.user.id,
-      outlineId: req.query.outlineId,
-      topic: req.query.topic,
+      outlineItemId: req.query.outlineItemId,
+      batchNo: req.query.batchNo,
+      status: req.query.status,
     });
+
     return res.status(200).json({ questions });
   } catch (error) {
     return next(error);
   }
 };
 
-exports.createQuestion = async (req, res, next) => {
+exports.getProjectQuestion = async (req, res, next) => {
   try {
-    const question = await createQuestion({
-      userId: req.user.id,
-      outlineId: req.body.outline || null,
-      topic: req.body.topic,
-      type: req.body.type,
-      difficulty: req.body.difficulty || 'medium',
-      prompt: req.body.prompt,
-      options: req.body.options || [],
-      correctAnswer: req.body.correctAnswer,
-      explanation: req.body.explanation || '',
-      source: req.body.source || 'manual',
-      tags: req.body.tags || [],
-    });
+    const question = await findByIdForProjectAndUser(
+      req.params.questionId,
+      req.params.projectId,
+      req.user.id
+    );
 
-    return res.status(201).json({ message: 'Question created', question });
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    return res.status(200).json({ question });
   } catch (error) {
     return next(error);
   }

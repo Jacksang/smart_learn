@@ -1,10 +1,14 @@
 const express = require('express');
 const { protect } = require('../users/middleware');
-const { listQuestions, createQuestion } = require('./controller');
+const { listProjectQuestions, getProjectQuestion } = require('./controller');
 
-const router = express.Router();
+const projectScopedRouter = express.Router({ mergeParams: true });
+const topLevelRouter = express.Router();
 
-router.get('/', protect, listQuestions);
-router.post('/', protect, createQuestion);
+projectScopedRouter.get('/', listProjectQuestions);
+projectScopedRouter.get('/:questionId', getProjectQuestion);
 
-module.exports = router;
+topLevelRouter.use(protect);
+topLevelRouter.projectScopedRouter = projectScopedRouter;
+
+module.exports = topLevelRouter;

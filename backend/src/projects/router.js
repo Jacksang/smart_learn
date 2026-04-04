@@ -7,7 +7,9 @@ const {
   updateProject,
 } = require('./controller');
 const materialRouter = require('../materials/router');
+const questionRouter = require('../questions/router');
 const projectMaterialRouter = materialRouter.projectScopedRouter;
+const projectQuestionRouter = questionRouter.projectScopedRouter;
 
 const router = express.Router();
 
@@ -17,5 +19,6 @@ router.post('/', createProject);
 router.get('/:projectId', getProject);
 router.patch('/:projectId', updateProject);
 router.use('/:projectId/materials', projectMaterialRouter);
+router.use('/:projectId/questions', projectQuestionRouter);
 
 module.exports = router;

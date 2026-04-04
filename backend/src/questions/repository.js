@@ -1,68 +1,97 @@
 const db = require('../../config/database');
 
-async function listQuestions({ userId, outlineId, topic }) {
-  const clauses = ['user_id = $1'];
-  const params = [userId];
+const QUESTION_COLUMNS = [
+  'id',
+  'project_id',
+  'outline_item_id',
+  'batch_no',
+  'position_in_batch',
+  'question_type',
+  'difficulty_level',
+  'prompt',
+  'options',
+  'correct_answer',
+  'explanation',
+  'generation_source',
+  'status',
+  'created_at',
+  'updated_at',
+];
 
-  if (outlineId) {
-    params.push(outlineId);
-    clauses.push(`outline_id = $${params.length}`);
+const QUESTION_SELECT = QUESTION_COLUMNS.join(', ');
+
+function mapQuestionRow(row) {
+  if (!row) {
+    return null;
   }
 
-  if (topic) {
-    params.push(topic);
-    clauses.push(`topic = $${params.length}`);
+  return {
+    id: row.id,
+    project_id: row.project_id,
+    outline_item_id: row.outline_item_id,
+    batch_no: row.batch_no,
+    position_in_batch: row.position_in_batch,
+    question_type: row.question_type,
+    difficulty_level: row.difficulty_level,
+    prompt: row.prompt,
+    options: row.options,
+    correct_answer: row.correct_answer,
+    explanation: row.explanation,
+    generation_source: row.generation_source,
+    status: row.status,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+async function listByProjectForUser({ projectId, userId, outlineItemId, batchNo, status }) {
+  const clauses = ['q.project_id = $1', 'p.user_id = $2'];
+  const params = [projectId, userId];
+
+  if (outlineItemId) {
+    params.push(outlineItemId);
+    clauses.push(`q.outline_item_id = $${params.length}`);
+  }
+
+  if (batchNo) {
+    params.push(batchNo);
+    clauses.push(`q.batch_no = $${params.length}`);
+  }
+
+  if (status) {
+    params.push(status);
+    clauses.push(`q.status = $${params.length}`);
   }
 
   const result = await db.query(
-    `SELECT id, user_id, outline_id, topic, type, difficulty, prompt, options, correct_answer, explanation, source, tags, created_at, updated_at
-     FROM questions
+    `SELECT ${QUESTION_COLUMNS.map((column) => `q.${column}`).join(', ')}
+     FROM questions q
+     INNER JOIN learning_projects p ON p.id = q.project_id
      WHERE ${clauses.join(' AND ')}
-     ORDER BY created_at DESC`,
+     ORDER BY q.batch_no ASC, q.position_in_batch ASC, q.created_at ASC`,
     params
   );
 
-  return result.rows;
+  return result.rows.map(mapQuestionRow);
 }
 
-async function createQuestion(payload) {
+async function findByIdForProjectAndUser(questionId, projectId, userId) {
   const result = await db.query(
-    `INSERT INTO questions (
-      user_id, outline_id, topic, type, difficulty, prompt, options, correct_answer, explanation, source, tags
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10, $11::jsonb)
-    RETURNING id, user_id, outline_id, topic, type, difficulty, prompt, options, correct_answer, explanation, source, tags, created_at, updated_at`,
-    [
-      payload.userId,
-      payload.outlineId || null,
-      payload.topic,
-      payload.type,
-      payload.difficulty || 'medium',
-      payload.prompt,
-      JSON.stringify(payload.options || []),
-      JSON.stringify(payload.correctAnswer),
-      payload.explanation || '',
-      payload.source || 'manual',
-      JSON.stringify(payload.tags || []),
-    ]
-  );
-
-  return result.rows[0];
-}
-
-async function findById(id) {
-  const result = await db.query(
-    `SELECT id, user_id, outline_id, topic, type, difficulty, prompt, options, correct_answer, explanation, source, tags, created_at, updated_at
-     FROM questions
-     WHERE id = $1
+    `SELECT ${QUESTION_COLUMNS.map((column) => `q.${column}`).join(', ')}
+     FROM questions q
+     INNER JOIN learning_projects p ON p.id = q.project_id
+     WHERE q.id = $1 AND q.project_id = $2 AND p.user_id = $3
      LIMIT 1`,
-    [id]
+    [questionId, projectId, userId]
   );
 
-  return result.rows[0] || null;
+  return mapQuestionRow(result.rows[0]);
 }
 
 module.exports = {
-  listQuestions,
-  createQuestion,
-  findById,
+  QUESTION_COLUMNS,
+  QUESTION_SELECT,
+  mapQuestionRow,
+  listByProjectForUser,
+  findByIdForProjectAndUser,
 };
