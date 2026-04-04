@@ -319,9 +319,34 @@ Once the initial baseline exists, later checkpoints can extend the database in o
 
 This keeps the D1.1 foundation simple without blocking a more formal migration workflow later.
 
+## SQL bootstrap / migration folder and file structure
+
+### D1.1 baseline layout
+Use a backend-local database directory so PostgreSQL artifacts stay close to the runtime/config code they support:
+
+- `backend/db/`
+  - `backend/db/schema/`
+    - `backend/db/schema/001_baseline.sql` — the committed MVP bootstrap schema aligned to `docs/POSTGRESQL_SCHEMA_SPEC.md`
+  - `backend/db/scripts/`
+    - `backend/db/scripts/apply-sql-file.js` — small Node runner that loads a target `.sql` file and executes it through `backend/config/database.js`
+
+### Naming and ordering rules
+- SQL files should use a numeric prefix so ordering is explicit from the start, even if D1.1 only ships one baseline file.
+- The first committed schema artifact should be named `001_baseline.sql` to signal that it is the initial bootstrap and leave room for later ordered files such as `002_add_tracking_indexes.sql` if the project keeps the lightweight SQL-first approach.
+- Keep executable helpers under `backend/db/scripts/` rather than mixing them into `backend/config/`, so config and schema operations remain separate.
+
+### Why this structure
+1. `backend/db/` keeps schema/bootstrap artifacts inside the backend runtime boundary without scattering top-level project files.
+2. `schema/` makes the ownership of committed SQL obvious during code review.
+3. `scripts/` provides a clean home for the intentional bootstrap runner and any later lightweight migration helpers.
+4. This layout remains compatible with either future path: continuing ordered SQL files or later adopting a formal migration tool while preserving `001_baseline.sql` as the importable baseline.
+
+### Execution expectation tied to this layout
+- D1.1 should wire an npm script that invokes the Node runner against `backend/db/schema/001_baseline.sql` explicitly.
+- Normal server startup should continue using only `backend/config/database.js` connectivity checks and must not auto-apply files from `backend/db/schema/`.
+
 ## Planned follow-on work in this document
 Later D1.1 checkpoints should extend this file with:
-- schema/bootstrap file layout and migration approach
 - dependency/config update notes
 - setup/bootstrap instructions references
 
