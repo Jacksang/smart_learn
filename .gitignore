@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+*.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+*.min.js
+*.min.css
+
+# Uploads
+uploads/
+tmp/
+temp/
+
+# Documentation
+docs/_build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+.cache/
+
+# IDE specific
+.vscode/
+.idea/
+
+# Production
+server.js
+prod.js
