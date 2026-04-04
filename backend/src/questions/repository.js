@@ -88,10 +88,61 @@ async function findByIdForProjectAndUser(questionId, projectId, userId) {
   return mapQuestionRow(result.rows[0]);
 }
 
+async function insertQuestionBatch(questions = []) {
+  if (questions.length === 0) {
+    return [];
+  }
+
+  const values = [];
+  const params = [];
+
+  questions.forEach((question) => {
+    params.push(
+      question.project_id,
+      question.outline_item_id || null,
+      question.batch_no,
+      question.position_in_batch,
+      question.question_type,
+      question.difficulty_level,
+      question.prompt,
+      question.options === undefined ? null : JSON.stringify(question.options),
+      question.correct_answer === undefined ? null : JSON.stringify(question.correct_answer),
+      question.explanation || null,
+      question.generation_source,
+      question.status || 'active'
+    );
+
+    const base = params.length - 11;
+    values.push(`($${base}, $${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}::jsonb, $${base + 8}::jsonb, $${base + 9}, $${base + 10}, $${base + 11})`);
+  });
+
+  const result = await db.query(
+    `INSERT INTO questions (
+      project_id,
+      outline_item_id,
+      batch_no,
+      position_in_batch,
+      question_type,
+      difficulty_level,
+      prompt,
+      options,
+      correct_answer,
+      explanation,
+      generation_source,
+      status
+    ) VALUES ${values.join(', ')}
+    RETURNING ${QUESTION_SELECT}`,
+    params
+  );
+
+  return result.rows.map(mapQuestionRow);
+}
+
 module.exports = {
   QUESTION_COLUMNS,
   QUESTION_SELECT,
   mapQuestionRow,
   listByProjectForUser,
   findByIdForProjectAndUser,
+  insertQuestionBatch,
 };
