@@ -30,7 +30,7 @@ Rules for use:
 - [x] Commit and push
 
 ### D0.3 Lesson state machine
-- [ ] Define Learn / Review / Quiz / Reinforce states
+- [x] Define Learn / Review / Quiz / Reinforce states
 - [ ] Define transitions and interruption handling
 - [ ] Define deferred-question behavior
 - [ ] Save artifact: `docs/LESSON_STATE_MACHINE.md`
