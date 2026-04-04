@@ -113,5 +113,8 @@ Development mode:
 npm run backend:dev
 ```
 
-## Known D1.1 caveat
-As of the current D1.1 state, `backend/config/server.js` still calls `connectDB()` like a function even though `backend/config/database.js` exports an object with a `.connect()` method. That startup-path fix belongs to a later D1.1 runtime task; use the connectivity check above to validate PostgreSQL setup in the meantime.
+## Known D1.1 runtime notes
+- The backend startup path now uses PostgreSQL only; it no longer depends on MongoDB/Mongoose.
+- In this workspace, startup still fails if PostgreSQL is not running or not reachable (for example `ECONNREFUSED 127.0.0.1:5432`).
+- During the remaining schema/runtime cutover window, endpoints that hit missing PostgreSQL tables/columns/foreign keys return `503 Service Unavailable` with an explicit MVP-readiness message instead of an opaque `500`.
+- Apply `backend/db/schema/001_baseline.sql` before normal backend testing so the PostgreSQL-only runtime has the expected baseline schema available.
