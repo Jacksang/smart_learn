@@ -96,6 +96,17 @@ async function countAttemptsByQuestionInProject({ projectId, questionId }) {
   return result.rows[0]?.attempt_count || 0;
 }
 
+async function findNextAttemptNoByQuestionInProject({ projectId, questionId }) {
+  const result = await db.query(
+    `SELECT COALESCE(MAX(attempt_no), 0)::int + 1 AS next_attempt_no
+     FROM answer_attempts
+     WHERE project_id = $1 AND question_id = $2`,
+    [projectId, questionId]
+  );
+
+  return result.rows[0]?.next_attempt_no || 1;
+}
+
 async function createAnswerAttempt(payload) {
   const result = await db.query(
     `INSERT INTO answer_attempts (
@@ -132,5 +143,6 @@ module.exports = {
   listByQuestionForProjectAndUser,
   listRecentByProjectForUser,
   countAttemptsByQuestionInProject,
+  findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,
 };

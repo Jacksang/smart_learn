@@ -7,6 +7,7 @@ const {
   listByQuestionForProjectAndUser,
   listRecentByProjectForUser,
   countAttemptsByQuestionInProject,
+  findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,
 } = require('./repository');
 
@@ -78,6 +79,21 @@ describe('answers repository', () => {
 
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining('FROM answer_attempts'), ['project-1', 'question-1']);
     expect(count).toBe(3);
+  });
+
+  test('computes next attempt number from max attempt_no without reusing numbers', async () => {
+    db.query.mockResolvedValue({ rows: [{ next_attempt_no: 4 }] });
+
+    const nextAttemptNo = await findNextAttemptNoByQuestionInProject({
+      projectId: 'project-1',
+      questionId: 'question-1',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('MAX(attempt_no)'),
+      ['project-1', 'question-1']
+    );
+    expect(nextAttemptNo).toBe(4);
   });
 
   test('creates an answer_attempts row with PostgreSQL MVP fields', async () => {
