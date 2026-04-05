@@ -132,6 +132,31 @@ async function createForProjectSessionAndUser({
   return mapDeferredQuestionRow(result.rows[0]);
 }
 
+async function updateStatusForProjectAndUser({
+  deferredQuestionId,
+  projectId,
+  userId,
+  status,
+  briefResponse,
+  resolvedAt,
+}) {
+  const result = await db.query(
+    `UPDATE deferred_questions AS dq
+     SET status = $4,
+         brief_response = $5,
+         resolved_at = $6
+     FROM learning_projects AS p
+     WHERE dq.id = $1
+       AND dq.project_id = $2
+       AND p.id = dq.project_id
+       AND p.user_id = $3
+     RETURNING ${DEFERRED_QUESTION_SELECT_WITH_ALIAS('dq')}`,
+    [deferredQuestionId, projectId, userId, status, briefResponse ?? null, resolvedAt ?? null]
+  );
+
+  return mapDeferredQuestionRow(result.rows[0]);
+}
+
 module.exports = {
   DEFERRED_QUESTION_COLUMNS,
   DEFERRED_QUESTION_SELECT,
@@ -139,4 +164,5 @@ module.exports = {
   mapDeferredQuestionRow,
   listForProjectSessionAndUser,
   createForProjectSessionAndUser,
+  updateStatusForProjectAndUser,
 };

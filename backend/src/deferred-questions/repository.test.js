@@ -10,6 +10,7 @@ const {
   mapDeferredQuestionRow,
   listForProjectSessionAndUser,
   createForProjectSessionAndUser,
+  updateStatusForProjectAndUser,
 } = require('./repository');
 
 describe('deferred questions repository scaffold', () => {
@@ -204,6 +205,64 @@ describe('deferred questions repository scaffold', () => {
       created_at: '2026-04-05T08:00:00.000Z',
       updated_at: '2026-04-05T08:00:00.000Z',
       resolved_at: null,
+    });
+  });
+
+  test('updates deferred-question revisit or resolution state for an owned project and maps the updated row', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'deferred-2',
+          project_id: 'project-1',
+          session_id: 'session-1',
+          outline_item_id: 'item-9',
+          question_text: 'Can we come back to eigenvectors later?',
+          defer_reason: 'off_topic',
+          status: 'resolved',
+          brief_response: 'Covered after the linear algebra recap.',
+          created_at: '2026-04-05T08:00:00.000Z',
+          updated_at: '2026-04-05T08:20:00.000Z',
+          resolved_at: '2026-04-05T08:20:00.000Z',
+        },
+      ],
+    });
+
+    const deferredQuestion = await updateStatusForProjectAndUser({
+      deferredQuestionId: 'deferred-2',
+      projectId: 'project-1',
+      userId: 'user-1',
+      status: 'resolved',
+      briefResponse: 'Covered after the linear algebra recap.',
+      resolvedAt: '2026-04-05T08:20:00.000Z',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE deferred_questions AS dq'),
+      [
+        'deferred-2',
+        'project-1',
+        'user-1',
+        'resolved',
+        'Covered after the linear algebra recap.',
+        '2026-04-05T08:20:00.000Z',
+      ]
+    );
+    expect(db.query.mock.calls[0][0]).toContain('dq.id = $1');
+    expect(db.query.mock.calls[0][0]).toContain('dq.project_id = $2');
+    expect(db.query.mock.calls[0][0]).toContain('p.id = dq.project_id');
+    expect(db.query.mock.calls[0][0]).toContain('p.user_id = $3');
+    expect(deferredQuestion).toEqual({
+      id: 'deferred-2',
+      project_id: 'project-1',
+      session_id: 'session-1',
+      outline_item_id: 'item-9',
+      question_text: 'Can we come back to eigenvectors later?',
+      defer_reason: 'off_topic',
+      status: 'resolved',
+      brief_response: 'Covered after the linear algebra recap.',
+      created_at: '2026-04-05T08:00:00.000Z',
+      updated_at: '2026-04-05T08:20:00.000Z',
+      resolved_at: '2026-04-05T08:20:00.000Z',
     });
   });
 });
