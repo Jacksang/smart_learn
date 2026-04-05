@@ -5,6 +5,7 @@ jest.mock('./service', () => ({
 
 const { getRecoveryRecommendation, buildRecoverySummary } = require('./service');
 const controller = require('./controller');
+const router = require('./router');
 
 function createRes() {
   return {
@@ -16,6 +17,28 @@ function createRes() {
 describe('reinforce controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('registers the protected recovery recommendation route', () => {
+    const recommendationLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/sessions/:sessionId/reinforce/recommendation'
+    );
+
+    expect(recommendationLayer).toBeDefined();
+    expect(recommendationLayer.route.methods.post).toBe(true);
+    expect(recommendationLayer.route.stack).toHaveLength(2);
+    expect(recommendationLayer.route.stack[1].handle).toBe(controller.getProjectSessionRecoveryRecommendation);
+  });
+
+  test('registers the protected recovery summary route', () => {
+    const summaryLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/sessions/:sessionId/reinforce/summary'
+    );
+
+    expect(summaryLayer).toBeDefined();
+    expect(summaryLayer.route.methods.post).toBe(true);
+    expect(summaryLayer.route.stack).toHaveLength(2);
+    expect(summaryLayer.route.stack[1].handle).toBe(controller.getProjectSessionRecoverySummary);
   });
 
   test('returns the current project/session recovery recommendation payload', async () => {

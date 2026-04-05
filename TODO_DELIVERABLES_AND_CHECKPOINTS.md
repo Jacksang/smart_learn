@@ -123,12 +123,13 @@ Rules for use:
   - Closeout note (2026-04-05): D2.2.1-D2.2.7 are complete, including the PostgreSQL-backed `backend/src/deferred-questions/` repository/service/controller/router module, project-scoped routes for `POST /api/projects/:projectId/deferred-questions`, `GET /api/projects/:projectId/deferred-questions`, and `PATCH /api/projects/:projectId/deferred-questions/:deferredQuestionId`, focused Jest coverage across repository/service/controller behavior, and live route reachability verification via `401` responses on the mounted endpoints without auth.
 
 ### D2.3 Reinforce and recovery flow
-- [ ] Implement confidence recovery triggers
-- [ ] Add easier-question fallback path
-- [ ] Add end-of-session summary structure
-- [ ] Save artifact: service logic + tests
+- [x] Implement confidence recovery triggers
+- [x] Add easier-question fallback path
+- [x] Add end-of-session summary structure
+- [x] Save artifact: service logic + tests
 - [ ] Commit and push
   - Planning artifact (2026-04-05): Function-level breakdown created in `D2.3_REINFORCE_AND_RECOVERY_FUNCTION_BREAKDOWN.md`.
+  - Closeout note (2026-04-05): D2.3.1-D2.3.6 are complete, including the `backend/src/reinforce/` service/controller/router module, protected project-session routes for `POST /api/projects/:projectId/sessions/:sessionId/reinforce/recommendation` and `POST /api/projects/:projectId/sessions/:sessionId/reinforce/summary`, focused Jest coverage proving the routes are registered and controller/service payloads are returned, plus live unauthenticated reachability verification via `401` responses on both mounted endpoints without auth.
 
 ---
 
@@ -175,4 +176,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D2.3 — Reinforce and recovery flow
+- [ ] Start D3.1 — PDF / DOCX / image support
