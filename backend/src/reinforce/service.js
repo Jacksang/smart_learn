@@ -427,6 +427,61 @@ function getRecoveryRecommendation(input = {}) {
   };
 }
 
+function buildRecoverySummary(input = {}) {
+  const recommendation = getRecoveryRecommendation(input);
+  const weakArea = (input.weakAreas || [])
+    .map(normalizeWeakArea)
+    .find((area) => area.outlineItemId && area.outlineItemId === recommendation.targetOutlineItemId);
+
+  const weakAreaLabel = weakArea?.title
+    || recommendation.targetOutlineItemId
+    || 'current topic';
+
+  if (!recommendation.isStruggling) {
+    return {
+      isStruggling: false,
+      weakArea: null,
+      recoveryAction: 'continue',
+      summaryMessage: 'You kept a steady pace in this session. Keep going with the next topic when you’re ready.',
+      nextStep: 'Continue with the next planned question or topic.' ,
+      recommendation,
+    };
+  }
+
+  const actionSummaryMap = {
+    review: {
+      summaryMessage: `We slowed down around ${weakAreaLabel} to make the core idea clearer.`,
+      nextStep: `Do one short recap on ${weakAreaLabel} before moving back into full difficulty.`,
+    },
+    reinforce: {
+      summaryMessage: `We shifted into support mode around ${weakAreaLabel} so you could rebuild confidence without extra pressure.`,
+      nextStep: `Come back to ${weakAreaLabel} with one guided example or confidence-building practice step.`,
+    },
+    fallback_easier_question: {
+      summaryMessage: `We stepped down the difficulty on ${weakAreaLabel} to lock in the foundation first.`,
+      nextStep: `Try one easier check on ${weakAreaLabel}, then move back up once it feels steadier.`,
+    },
+    continue: {
+      summaryMessage: `You stayed on track with ${weakAreaLabel}.`,
+      nextStep: `Continue building on ${weakAreaLabel} at the current pace.`,
+    },
+  };
+
+  const selectedSummary = actionSummaryMap[recommendation.recommendedAction] || actionSummaryMap.reinforce;
+
+  return {
+    isStruggling: true,
+    weakArea: {
+      outlineItemId: recommendation.targetOutlineItemId,
+      title: weakArea?.title || null,
+    },
+    recoveryAction: recommendation.recommendedAction,
+    summaryMessage: selectedSummary.summaryMessage,
+    nextStep: selectedSummary.nextStep,
+    recommendation,
+  };
+}
+
 module.exports = {
   RECOVERY_ACTIONS,
   LOW_CONFIDENCE_THRESHOLD,
@@ -435,4 +490,5 @@ module.exports = {
   chooseRecoveryAction,
   selectEasierFallbackQuestion,
   getRecoveryRecommendation,
+  buildRecoverySummary,
 };

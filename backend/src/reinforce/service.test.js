@@ -3,6 +3,7 @@ const {
   chooseRecoveryAction,
   selectEasierFallbackQuestion,
   getRecoveryRecommendation,
+  buildRecoverySummary,
 } = require('./service');
 
 describe('reinforce service', () => {
@@ -259,5 +260,94 @@ describe('reinforce service', () => {
     });
 
     expect(fallback).toBe(null);
+  });
+
+  test('builds a recovery-oriented end-of-session summary when struggle was detected', () => {
+    const summary = buildRecoverySummary({
+      session: {
+        mode: 'quiz',
+        currentOutlineItemId: 'topic-fractions',
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-fractions', isCorrect: false },
+        { outlineItemId: 'topic-fractions', isCorrect: false },
+      ],
+      weakAreas: [
+        { outlineItemId: 'topic-fractions', title: 'Fractions', progressState: 'in_progress' },
+      ],
+    });
+
+    expect(summary).toEqual({
+      isStruggling: true,
+      weakArea: {
+        outlineItemId: 'topic-fractions',
+        title: 'Fractions',
+      },
+      recoveryAction: 'fallback_easier_question',
+      summaryMessage: 'We stepped down the difficulty on Fractions to lock in the foundation first.',
+      nextStep: 'Try one easier check on Fractions, then move back up once it feels steadier.',
+      recommendation: {
+        isStruggling: true,
+        reason: 'Repeated incorrect attempts on the same topic indicate the learner is struggling.',
+        reasonCode: 'repeated_incorrect_attempts',
+        recommendedAction: 'fallback_easier_question',
+        currentMode: 'quiz',
+        targetOutlineItemId: 'topic-fractions',
+        supportMessage: 'This concept is still wobbly, so let’s switch to a simpler version and lock in the foundation.',
+        easierQuestionFallback: null,
+        signals: {
+          sessionProgressStruggling: false,
+          weakAreaStruggling: false,
+          hasWeakAreaHit: true,
+          confidenceDrop: false,
+          lowConfidence: false,
+          recentIncorrectStreak: 2,
+          lastAttemptIncorrect: true,
+        },
+      },
+    });
+  });
+
+  test('builds a neutral end-of-session summary when no recovery signal exists', () => {
+    const summary = buildRecoverySummary({
+      session: {
+        mode: 'learn',
+        currentOutlineItemId: 'topic-addition',
+        priorConfidence: 0.7,
+        confidence: 0.68,
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-addition', isCorrect: true },
+        { outlineItemId: 'topic-addition', isCorrect: true },
+      ],
+      weakAreas: [],
+    });
+
+    expect(summary).toEqual({
+      isStruggling: false,
+      weakArea: null,
+      recoveryAction: 'continue',
+      summaryMessage: 'You kept a steady pace in this session. Keep going with the next topic when you’re ready.',
+      nextStep: 'Continue with the next planned question or topic.',
+      recommendation: {
+        isStruggling: false,
+        reason: 'No strong struggle signal was detected.',
+        reasonCode: 'stable',
+        recommendedAction: 'continue',
+        currentMode: 'learn',
+        targetOutlineItemId: 'topic-addition',
+        supportMessage: 'Nice work — you can keep building from here.',
+        easierQuestionFallback: null,
+        signals: {
+          sessionProgressStruggling: false,
+          weakAreaStruggling: false,
+          hasWeakAreaHit: false,
+          confidenceDrop: false,
+          lowConfidence: false,
+          recentIncorrectStreak: 0,
+          lastAttemptIncorrect: false,
+        },
+      },
+    });
   });
 });

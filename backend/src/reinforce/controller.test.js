@@ -1,8 +1,9 @@
 jest.mock('./service', () => ({
   getRecoveryRecommendation: jest.fn(),
+  buildRecoverySummary: jest.fn(),
 }));
 
-const { getRecoveryRecommendation } = require('./service');
+const { getRecoveryRecommendation, buildRecoverySummary } = require('./service');
 const controller = require('./controller');
 
 function createRes() {
@@ -120,6 +121,75 @@ describe('reinforce controller', () => {
     expect(getRecoveryRecommendation).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'recentAttempts must be an array when provided' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns the end-of-session recovery summary payload', async () => {
+    const summary = {
+      isStruggling: true,
+      weakArea: {
+        outlineItemId: 'topic-fractions',
+        title: 'Fractions',
+      },
+      recoveryAction: 'fallback_easier_question',
+      summaryMessage: 'We stepped down the difficulty on Fractions to lock in the foundation first.',
+      nextStep: 'Try one easier check on Fractions, then move back up once it feels steadier.',
+      recommendation: {
+        isStruggling: true,
+        reasonCode: 'repeated_incorrect_attempts',
+      },
+    };
+    buildRecoverySummary.mockReturnValue(summary);
+
+    const req = {
+      params: {
+        projectId: 'project-1',
+        sessionId: 'session-1',
+      },
+      body: {
+        session: {
+          mode: 'quiz',
+          currentOutlineItemId: 'topic-fractions',
+        },
+        recentAttempts: [
+          { outlineItemId: 'topic-fractions', isCorrect: false },
+          { outlineItemId: 'topic-fractions', isCorrect: false },
+        ],
+        weakAreas: [
+          { outlineItemId: 'topic-fractions', title: 'Fractions' },
+        ],
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectSessionRecoverySummary(req, res, next);
+
+    expect(buildRecoverySummary).toHaveBeenCalledWith({
+      session: {
+        mode: 'quiz',
+        currentOutlineItemId: 'topic-fractions',
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-fractions', isCorrect: false },
+        { outlineItemId: 'topic-fractions', isCorrect: false },
+      ],
+      weakAreas: [
+        { outlineItemId: 'topic-fractions', title: 'Fractions' },
+      ],
+      questionCandidates: [],
+      currentQuestion: {},
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        projectId: 'project-1',
+        sessionId: 'session-1',
+        summary,
+      },
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
