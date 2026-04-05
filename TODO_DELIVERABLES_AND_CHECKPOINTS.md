@@ -92,11 +92,12 @@ Rules for use:
 ### D1.5 Answers and progress
 - [ ] Implement answer submission
 - [x] Implement answer evaluation
-- [ ] Implement progress snapshots / weak-area logic
+- [x] Implement progress snapshots / weak-area logic
 - [ ] Save artifact: working routes + tests
 - [ ] Commit and push
   - Planning note (2026-04-05): Detailed execution breakdown created in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`.
   - Progress sync (2026-04-05): D1.5.D is complete in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`, including project-scoped answer history endpoints, explicit answer evaluation by `answerAttemptId`, and controller/router test coverage proving both `GET /api/projects/:projectId/answers/history` and `POST /api/projects/:projectId/answers/evaluate` are implemented.
+  - Progress sync (2026-04-05): D1.5.E is complete in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`, including the `backend/src/progress/` module, `POST /api/projects/:projectId/progress/refresh`, persisted project/topic `progress_snapshots`, and focused verification in `backend/src/progress/repository.test.js`, `backend/src/progress/service.test.js`, and `backend/src/progress/controller.test.js`.
 
 ---
 
