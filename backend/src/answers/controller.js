@@ -111,7 +111,7 @@ exports.listProjectAnswerHistory = async (req, res, next) => {
 
     return res.status(200).json({
       projectId,
-      limit,
+      count: answers.length,
       answers,
     });
   } catch (error) {

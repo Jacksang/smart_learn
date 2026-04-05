@@ -133,9 +133,53 @@ describe('answers controller', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({
       projectId: 'project-1',
-      limit: 15,
+      count: 1,
       answers: [{ id: 'attempt-2' }],
     });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns an empty project answer history payload when no attempts exist yet', async () => {
+    listRecentByProjectForUser.mockResolvedValue([]);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      query: {},
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listProjectAnswerHistory(req, res, next);
+
+    expect(listRecentByProjectForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+      limit: 20,
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      count: 0,
+      answers: [],
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing projectId before hitting the repository', async () => {
+    const req = {
+      params: { projectId: '   ' },
+      query: {},
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listProjectAnswerHistory(req, res, next);
+
+    expect(listRecentByProjectForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
     expect(next).not.toHaveBeenCalled();
   });
 
