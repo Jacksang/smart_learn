@@ -8,6 +8,7 @@ const {
   DEFERRED_QUESTION_SELECT,
   DEFERRED_QUESTION_SELECT_WITH_ALIAS,
   mapDeferredQuestionRow,
+  listForProjectSessionAndUser,
   createForProjectSessionAndUser,
 } = require('./repository');
 
@@ -56,6 +57,93 @@ describe('deferred questions repository scaffold', () => {
     expect(DEFERRED_QUESTION_SELECT_WITH_ALIAS('dq')).toBe(
       'dq.id, dq.project_id, dq.session_id, dq.outline_item_id, dq.question_text, dq.defer_reason, dq.status, dq.brief_response, dq.created_at, dq.updated_at, dq.resolved_at'
     );
+  });
+
+  test('lists deferred questions in stable reverse-created order and handles empty state cleanly', async () => {
+    db.query
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: 'deferred-9',
+            project_id: 'project-1',
+            session_id: 'session-1',
+            outline_item_id: 'item-9',
+            question_text: 'Can we revisit integrals at the end?',
+            defer_reason: 'parking_lot',
+            status: 'deferred',
+            brief_response: 'Yes, let us finish derivatives first.',
+            created_at: '2026-04-05T08:05:00.000Z',
+            updated_at: '2026-04-05T08:05:00.000Z',
+            resolved_at: null,
+          },
+          {
+            id: 'deferred-7',
+            project_id: 'project-1',
+            session_id: 'session-1',
+            outline_item_id: 'item-4',
+            question_text: 'Why is the derivative useful?',
+            defer_reason: 'same_topic',
+            status: 'deferred',
+            brief_response: null,
+            created_at: '2026-04-05T08:00:00.000Z',
+            updated_at: '2026-04-05T08:00:00.000Z',
+            resolved_at: null,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    await expect(
+      listForProjectSessionAndUser({
+        projectId: 'project-1',
+        sessionId: 'session-1',
+        userId: 'user-1',
+      })
+    ).resolves.toEqual([
+      {
+        id: 'deferred-9',
+        project_id: 'project-1',
+        session_id: 'session-1',
+        outline_item_id: 'item-9',
+        question_text: 'Can we revisit integrals at the end?',
+        defer_reason: 'parking_lot',
+        status: 'deferred',
+        brief_response: 'Yes, let us finish derivatives first.',
+        created_at: '2026-04-05T08:05:00.000Z',
+        updated_at: '2026-04-05T08:05:00.000Z',
+        resolved_at: null,
+      },
+      {
+        id: 'deferred-7',
+        project_id: 'project-1',
+        session_id: 'session-1',
+        outline_item_id: 'item-4',
+        question_text: 'Why is the derivative useful?',
+        defer_reason: 'same_topic',
+        status: 'deferred',
+        brief_response: null,
+        created_at: '2026-04-05T08:00:00.000Z',
+        updated_at: '2026-04-05T08:00:00.000Z',
+        resolved_at: null,
+      },
+    ]);
+
+    expect(db.query).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('ORDER BY dq.created_at DESC, dq.id DESC'),
+      ['project-1', 'user-1', 'session-1']
+    );
+    expect(db.query.mock.calls[0][0]).toContain('FROM deferred_questions dq');
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN learning_projects p ON p.id = dq.project_id');
+    expect(db.query.mock.calls[0][0]).toContain('dq.session_id = $3');
+
+    await expect(
+      listForProjectSessionAndUser({
+        projectId: 'project-1',
+        sessionId: 'session-1',
+        userId: 'user-1',
+      })
+    ).resolves.toEqual([]);
   });
 
   test('creates one deferred question for an owned project/session and maps the inserted row', async () => {

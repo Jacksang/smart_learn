@@ -38,6 +38,37 @@ function mapDeferredQuestionRow(row) {
   };
 }
 
+async function listForProjectSessionAndUser({ projectId, sessionId, userId, status }) {
+  const clauses = ['dq.project_id = $1', 'p.user_id = $2'];
+  const params = [projectId, userId];
+
+  if (sessionId !== undefined) {
+    params.push(sessionId);
+
+    if (sessionId === null) {
+      clauses.push('dq.session_id IS NULL');
+    } else {
+      clauses.push(`dq.session_id = $${params.length}`);
+    }
+  }
+
+  if (status !== undefined) {
+    params.push(status);
+    clauses.push(`dq.status = $${params.length}`);
+  }
+
+  const result = await db.query(
+    `SELECT ${DEFERRED_QUESTION_SELECT_WITH_ALIAS('dq')}
+     FROM deferred_questions dq
+     INNER JOIN learning_projects p ON p.id = dq.project_id
+     WHERE ${clauses.join(' AND ')}
+     ORDER BY dq.created_at DESC, dq.id DESC`,
+    params
+  );
+
+  return result.rows.map(mapDeferredQuestionRow);
+}
+
 async function createForProjectSessionAndUser({
   projectId,
   sessionId = null,
@@ -106,5 +137,6 @@ module.exports = {
   DEFERRED_QUESTION_SELECT,
   DEFERRED_QUESTION_SELECT_WITH_ALIAS,
   mapDeferredQuestionRow,
+  listForProjectSessionAndUser,
   createForProjectSessionAndUser,
 };
