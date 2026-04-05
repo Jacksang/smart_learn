@@ -167,6 +167,30 @@ exports.createProjectSession = async (req, res, next) => {
   }
 };
 
+exports.getCurrentProjectSession = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    const activeSession = await findActiveByProjectForUser({
+      projectId,
+      userId: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        session: mapSessionToApi(activeSession),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 exports.updateProjectSessionState = async (req, res, next) => {
   try {
     const projectId = normalizeString(req.params.projectId);

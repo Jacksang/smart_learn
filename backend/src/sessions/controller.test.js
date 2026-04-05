@@ -231,6 +231,95 @@ describe('sessions controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  test('returns the current active project session state', async () => {
+    findActiveByProjectForUser.mockResolvedValue({
+      id: 'session-active',
+      projectId: 'project-1',
+      userId: 'user-1',
+      mode: ' QUIZ ',
+      status: 'active',
+      currentOutlineItemId: ' topic-quiz-1 ',
+      startedAt: '2026-04-05T05:55:00.000Z',
+      endedAt: null,
+      createdAt: '2026-04-05T05:55:00.000Z',
+      updatedAt: '2026-04-05T05:58:00.000Z',
+    });
+
+    const req = {
+      params: { projectId: ' project-1 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getCurrentProjectSession(req, res, next);
+
+    expect(findActiveByProjectForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        session: {
+          id: 'session-active',
+          projectId: 'project-1',
+          mode: 'quiz',
+          status: 'active',
+          currentOutlineItemId: 'topic-quiz-1',
+          startedAt: '2026-04-05T05:55:00.000Z',
+          endedAt: null,
+          createdAt: '2026-04-05T05:55:00.000Z',
+          updatedAt: '2026-04-05T05:58:00.000Z',
+        },
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns a clean no-session state for a project with no active session', async () => {
+    findActiveByProjectForUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getCurrentProjectSession(req, res, next);
+
+    expect(findActiveByProjectForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        session: null,
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing projectId when retrieving current session state', async () => {
+    const req = {
+      params: { projectId: '   ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getCurrentProjectSession(req, res, next);
+
+    expect(findActiveByProjectForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   test('updates session mode and topic and returns API-facing payload', async () => {
     updateSessionState.mockResolvedValue({
       id: 'session-1',
