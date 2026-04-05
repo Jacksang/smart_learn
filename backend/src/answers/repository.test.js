@@ -127,7 +127,7 @@ describe('answers repository', () => {
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LIMIT $3'), ['project-1', 'user-1', 20]);
   });
 
-  test('finds one answer attempt with question and project context for explicit evaluation', async () => {
+  test('finds one answer attempt with nested question and project context for explicit evaluation', async () => {
     db.query.mockResolvedValue({
       rows: [
         {
@@ -179,6 +179,9 @@ describe('answers repository', () => {
         }),
       })
     );
+    expect(answerAttempt.question_type).toBeUndefined();
+    expect(answerAttempt.correct_answer).toBeUndefined();
+    expect(answerAttempt.explanation).toBeUndefined();
   });
 
   test('returns null when explicit evaluation lookup finds no owned attempt', async () => {

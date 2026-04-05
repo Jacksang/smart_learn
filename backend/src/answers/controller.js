@@ -211,9 +211,9 @@ exports.evaluateProjectAnswers = async (req, res, next) => {
 
     const evaluation = evaluateAnswerAttempt({
       question: {
-        question_type: answerAttempt.question_type,
-        correct_answer: answerAttempt.correct_answer,
-        explanation: answerAttempt.explanation,
+        question_type: answerAttempt.question?.question_type,
+        correct_answer: answerAttempt.question?.correct_answer,
+        explanation: answerAttempt.question?.explanation,
       },
       userAnswer: answerAttempt.user_answer,
     });

@@ -324,14 +324,16 @@ describe('answers controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('evaluates a stored project answer attempt with shared evaluation service', async () => {
+  test('evaluates a stored project answer attempt with nested question context from the repository contract', async () => {
     findAttemptWithQuestionContextForProjectAndUser.mockResolvedValue({
       id: 'attempt-7',
       project_id: 'project-1',
       user_answer: { selectedOption: 'B' },
-      question_type: 'multiple_choice',
-      correct_answer: { value: 'B' },
-      explanation: 'Because B is correct.',
+      question: {
+        question_type: 'multiple_choice',
+        correct_answer: { value: 'B' },
+        explanation: 'Because B is correct.',
+      },
     });
     evaluateAnswerAttempt.mockReturnValue({
       isCorrect: true,
