@@ -70,16 +70,60 @@ describe('answers repository', () => {
     expect(answers).toEqual([]);
   });
 
-  test('lists recent project answer attempts with explicit limit', async () => {
-    db.query.mockResolvedValue({ rows: [] });
+  test('lists recent project answer attempts in ownership-safe newest-first order with explicit limit', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'attempt-9',
+          question_id: 'question-2',
+          project_id: 'project-1',
+          session_id: null,
+          user_answer: { value: 'B' },
+          is_correct: false,
+          score: 20,
+          feedback_text: 'Try again',
+          attempt_no: 3,
+          answered_at: '2026-04-05T02:00:00Z',
+          created_at: '2026-04-05T02:00:01Z',
+          question_prompt: 'Pick B',
+          question_type: 'multiple_choice',
+          outline_item_id: 'item-2',
+        },
+      ],
+    });
 
-    await listRecentByProjectForUser({
+    const answers = await listRecentByProjectForUser({
       projectId: 'project-1',
       userId: 'user-1',
       limit: 15,
     });
 
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LIMIT $3'), ['project-1', 'user-1', 15]);
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN learning_projects p ON p.id = aa.project_id AND p.user_id = $2');
+    expect(db.query.mock.calls[0][0]).toContain('ORDER BY aa.answered_at DESC, aa.created_at DESC, aa.id DESC');
+    expect(answers).toEqual([
+      expect.objectContaining({
+        id: 'attempt-9',
+        question_id: 'question-2',
+        feedback_text: 'Try again',
+        question: expect.objectContaining({
+          id: 'question-2',
+          prompt: 'Pick B',
+        }),
+      }),
+    ]);
+  });
+
+  test('falls back to sane MVP default limit for invalid project answer history limits', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    await listRecentByProjectForUser({
+      projectId: 'project-1',
+      userId: 'user-1',
+      limit: 0,
+    });
+
+    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LIMIT $3'), ['project-1', 'user-1', 20]);
   });
 
   test('counts attempts within project/question scope', async () => {

@@ -66,6 +66,8 @@ async function listByQuestionForProjectAndUser({ projectId, questionId, userId }
 }
 
 async function listRecentByProjectForUser({ projectId, userId, limit = 20 }) {
+  const normalizedLimit = Number.isInteger(limit) && limit > 0 ? limit : 20;
+
   const result = await db.query(
     `SELECT
        ${ANSWER_ATTEMPT_SELECT_WITH_ALIAS('aa')},
@@ -74,12 +76,12 @@ async function listRecentByProjectForUser({ projectId, userId, limit = 20 }) {
        q.outline_item_id
      FROM answer_attempts aa
      INNER JOIN questions q ON q.id = aa.question_id AND q.project_id = aa.project_id
-     INNER JOIN learning_projects p ON p.id = aa.project_id
+     INNER JOIN learning_projects p ON p.id = aa.project_id AND p.user_id = $2
      WHERE aa.project_id = $1
-       AND p.user_id = $2
-     ORDER BY aa.answered_at DESC, aa.created_at DESC, aa.attempt_no DESC
+       AND q.project_id = $1
+     ORDER BY aa.answered_at DESC, aa.created_at DESC, aa.id DESC
      LIMIT $3`,
-    [projectId, userId, limit]
+    [projectId, userId, normalizedLimit]
   );
 
   return result.rows.map(mapAnswerAttemptRow);
