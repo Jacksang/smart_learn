@@ -41,6 +41,39 @@ describe('progress controller', () => {
     jest.clearAllMocks();
   });
 
+  test('registers the protected project progress retrieval route', () => {
+    const projectProgressLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/progress'
+    );
+
+    expect(projectProgressLayer).toBeDefined();
+    expect(projectProgressLayer.route.methods.get).toBe(true);
+    expect(projectProgressLayer.route.stack).toHaveLength(2);
+    expect(projectProgressLayer.route.stack[1].handle).toBe(controller.getProjectProgress);
+  });
+
+  test('registers the protected topic progress retrieval route', () => {
+    const topicProgressLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/progress/topics/:itemId'
+    );
+
+    expect(topicProgressLayer).toBeDefined();
+    expect(topicProgressLayer.route.methods.get).toBe(true);
+    expect(topicProgressLayer.route.stack).toHaveLength(2);
+    expect(topicProgressLayer.route.stack[1].handle).toBe(controller.getTopicProgress);
+  });
+
+  test('registers the protected weak-areas retrieval route', () => {
+    const weakAreasLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/progress/weak-areas'
+    );
+
+    expect(weakAreasLayer).toBeDefined();
+    expect(weakAreasLayer.route.methods.get).toBe(true);
+    expect(weakAreasLayer.route.stack).toHaveLength(2);
+    expect(weakAreasLayer.route.stack[1].handle).toBe(controller.getProjectWeakAreas);
+  });
+
   test('registers the protected project-scoped refresh route', () => {
     const refreshLayer = router.stack.find(
       (layer) => layer.route && layer.route.path === '/projects/:projectId/progress/refresh'
