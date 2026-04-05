@@ -90,15 +90,16 @@ Rules for use:
   - Closeout note (2026-04-05): D1.4.A-F are complete in `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`, including project-scoped generation/listing routes, focused unit coverage, end-to-end flow verification in `backend/src/questions/flow.integration.test.js`, and `docs/QUESTION_GENERATION_FLOW.md`.
 
 ### D1.5 Answers and progress
-- [ ] Implement answer submission
+- [x] Implement answer submission
 - [x] Implement answer evaluation
 - [x] Implement progress snapshots / weak-area logic
 - [x] Save artifact: working routes + tests
-- [ ] Commit and push
+- [x] Commit and push
   - Planning note (2026-04-05): Detailed execution breakdown created in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`.
   - Progress sync (2026-04-05): D1.5.D is complete in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`, including project-scoped answer history endpoints, explicit answer evaluation by `answerAttemptId`, and controller/router test coverage proving both `GET /api/projects/:projectId/answers/history` and `POST /api/projects/:projectId/answers/evaluate` are implemented.
   - Progress sync (2026-04-05): D1.5.E is complete in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`, including the `backend/src/progress/` module, `POST /api/projects/:projectId/progress/refresh`, persisted project/topic `progress_snapshots`, and focused verification in `backend/src/progress/repository.test.js`, `backend/src/progress/service.test.js`, and `backend/src/progress/controller.test.js`.
   - Progress sync (2026-04-05): D1.5.F is complete in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`, including persisted retrieval endpoints for project progress, topic progress, and weak areas, plus router-stack/controller test coverage proving `GET /api/projects/:projectId/progress`, `GET /api/projects/:projectId/progress/topics/:itemId`, and `GET /api/projects/:projectId/progress/weak-areas` are wired and reachable through the mounted progress router.
+  - Closeout note (2026-04-05): D1.5.G6 final verification passed with 8 focused Jest suites / 74 tests across answers + progress controller/repository/service coverage plus the end-to-end integration flows in `backend/src/answers/flow.integration.test.js` and `backend/src/progress/flow.integration.test.js`. D1.5 documentation is captured in `docs/ANSWERS_AND_PROGRESS_FLOW.md`, and the parent/sub-checklists are now synced as complete.
 
 ---
 
@@ -169,4 +170,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D1.5.A via `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`
+- [ ] Start D2.1 — Learning sessions
