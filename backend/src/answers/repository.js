@@ -45,6 +45,29 @@ function mapAnswerAttemptRow(row) {
   };
 }
 
+function mapAnswerAttemptWithQuestionContextRow(row) {
+  const answerAttempt = mapAnswerAttemptRow(row);
+  if (!answerAttempt) {
+    return null;
+  }
+
+  return {
+    ...answerAttempt,
+    project: {
+      id: row.project_id,
+      user_id: row.project_owner_user_id,
+    },
+    question: {
+      id: row.question_id,
+      prompt: row.question_prompt,
+      question_type: row.question_type,
+      correct_answer: row.correct_answer,
+      explanation: row.explanation,
+      outline_item_id: row.outline_item_id,
+    },
+  };
+}
+
 async function listByQuestionForProjectAndUser({ projectId, questionId, userId }) {
   const result = await db.query(
     `SELECT
@@ -85,6 +108,33 @@ async function listRecentByProjectForUser({ projectId, userId, limit = 20 }) {
   );
 
   return result.rows.map(mapAnswerAttemptRow);
+}
+
+async function findAttemptWithQuestionContextForProjectAndUser({
+  projectId,
+  answerAttemptId,
+  userId,
+}) {
+  const result = await db.query(
+    `SELECT
+       ${ANSWER_ATTEMPT_SELECT_WITH_ALIAS('aa')},
+       q.prompt AS question_prompt,
+       q.question_type,
+       q.correct_answer,
+       q.explanation,
+       q.outline_item_id,
+       p.user_id AS project_owner_user_id
+     FROM answer_attempts aa
+     INNER JOIN questions q ON q.id = aa.question_id AND q.project_id = aa.project_id
+     INNER JOIN learning_projects p ON p.id = aa.project_id AND p.user_id = $3
+     WHERE aa.project_id = $1
+       AND aa.id = $2
+       AND q.project_id = $1
+     LIMIT 1`,
+    [projectId, answerAttemptId, userId]
+  );
+
+  return mapAnswerAttemptWithQuestionContextRow(result.rows[0]);
 }
 
 async function countAttemptsByQuestionInProject({ projectId, questionId }) {
@@ -142,8 +192,10 @@ async function createAnswerAttempt(payload) {
 module.exports = {
   ANSWER_ATTEMPT_COLUMNS,
   mapAnswerAttemptRow,
+  mapAnswerAttemptWithQuestionContextRow,
   listByQuestionForProjectAndUser,
   listRecentByProjectForUser,
+  findAttemptWithQuestionContextForProjectAndUser,
   countAttemptsByQuestionInProject,
   findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,

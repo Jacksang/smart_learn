@@ -6,6 +6,7 @@ const db = require('../../config/database');
 const {
   listByQuestionForProjectAndUser,
   listRecentByProjectForUser,
+  findAttemptWithQuestionContextForProjectAndUser,
   countAttemptsByQuestionInProject,
   findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,
@@ -124,6 +125,86 @@ describe('answers repository', () => {
     });
 
     expect(db.query).toHaveBeenCalledWith(expect.stringContaining('LIMIT $3'), ['project-1', 'user-1', 20]);
+  });
+
+  test('finds one answer attempt with question and project context for explicit evaluation', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'attempt-7',
+          question_id: 'question-3',
+          project_id: 'project-1',
+          session_id: 'session-1',
+          user_answer: { value: 'S3' },
+          is_correct: true,
+          score: 1,
+          feedback_text: 'Correct — S3 is AWS object storage.',
+          attempt_no: 2,
+          answered_at: '2026-04-05T03:00:00Z',
+          created_at: '2026-04-05T03:00:01Z',
+          question_prompt: 'Which AWS service stores objects?',
+          question_type: 'short_answer',
+          correct_answer: { value: 'S3' },
+          explanation: 'S3 stores objects, while EC2 runs virtual machines.',
+          outline_item_id: 'item-3',
+          project_owner_user_id: 'user-1',
+        },
+      ],
+    });
+
+    const answerAttempt = await findAttemptWithQuestionContextForProjectAndUser({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-7',
+      userId: 'user-1',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE aa.project_id = $1'),
+      ['project-1', 'attempt-7', 'user-1']
+    );
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN questions q ON q.id = aa.question_id AND q.project_id = aa.project_id');
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN learning_projects p ON p.id = aa.project_id AND p.user_id = $3');
+    expect(answerAttempt).toEqual(
+      expect.objectContaining({
+        id: 'attempt-7',
+        project: {
+          id: 'project-1',
+          user_id: 'user-1',
+        },
+        question: expect.objectContaining({
+          id: 'question-3',
+          question_type: 'short_answer',
+          correct_answer: { value: 'S3' },
+          explanation: 'S3 stores objects, while EC2 runs virtual machines.',
+        }),
+      })
+    );
+  });
+
+  test('returns null when explicit evaluation lookup finds no owned attempt', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const answerAttempt = await findAttemptWithQuestionContextForProjectAndUser({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-404',
+      userId: 'user-1',
+    });
+
+    expect(answerAttempt).toBeNull();
+  });
+
+  test('explicit evaluation lookup keeps project/user ownership enforcement in the query', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    await findAttemptWithQuestionContextForProjectAndUser({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-8',
+      userId: 'user-2',
+    });
+
+    expect(db.query.mock.calls[0][0]).toContain('AND p.user_id = $3');
+    expect(db.query.mock.calls[0][0]).toContain('AND aa.id = $2');
+    expect(db.query.mock.calls[0][0]).toContain('AND q.project_id = $1');
   });
 
   test('counts attempts within project/question scope', async () => {
