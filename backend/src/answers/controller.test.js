@@ -24,6 +24,7 @@ const {
 } = require('./repository');
 const { evaluateAnswerAttempt } = require('./service');
 const controller = require('./controller');
+const router = require('./router');
 
 function createRes() {
   return {
@@ -416,5 +417,27 @@ describe('answers controller', () => {
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: 'Answer attempt not found' });
     expect(next).not.toHaveBeenCalled();
+  });
+
+  test('wires project answer history and explicit evaluation routes on the answers router', () => {
+    const routeSummaries = router.stack
+      .filter((layer) => layer.route)
+      .map((layer) => ({
+        path: layer.route.path,
+        methods: Object.keys(layer.route.methods).filter((method) => layer.route.methods[method]),
+      }));
+
+    expect(routeSummaries).toEqual(
+      expect.arrayContaining([
+        {
+          path: '/projects/:projectId/answers/history',
+          methods: ['get'],
+        },
+        {
+          path: '/projects/:projectId/answers/evaluate',
+          methods: ['post'],
+        },
+      ])
+    );
   });
 });
