@@ -1,4 +1,9 @@
-const { createForProjectSessionAndUser, listForProjectSessionAndUser } = require('./repository');
+const {
+  createForProjectSessionAndUser,
+  listForProjectSessionAndUser,
+  updateStatusForProjectAndUser,
+} = require('./repository');
+const { buildDeferredQuestionStateUpdate } = require('./service');
 
 function normalizeString(value) {
   if (value === undefined || value === null) {
@@ -122,6 +127,54 @@ exports.createDeferredQuestion = async (req, res, next) => {
     }
 
     return res.status(201).json({
+      success: true,
+      data: {
+        deferredQuestion: mapDeferredQuestionToApi(deferredQuestion),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateDeferredQuestionState = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const deferredQuestionId = normalizeString(req.params.deferredQuestionId ?? req.params.id);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    if (!deferredQuestionId) {
+      return res.status(400).json({ message: 'deferredQuestionId is required' });
+    }
+
+    let stateUpdate;
+
+    try {
+      stateUpdate = buildDeferredQuestionStateUpdate({
+        currentStatus: req.body?.currentStatus ?? req.body?.current_status,
+        status: req.body?.status,
+        briefResponse: req.body?.briefResponse ?? req.body?.brief_response,
+        resolvedAt: req.body?.resolvedAt ?? req.body?.resolved_at,
+      });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    const deferredQuestion = await updateStatusForProjectAndUser({
+      deferredQuestionId,
+      projectId,
+      userId: req.user.id,
+      ...stateUpdate,
+    });
+
+    if (!deferredQuestion) {
+      return res.status(404).json({ message: 'Deferred question not found' });
+    }
+
+    return res.status(200).json({
       success: true,
       data: {
         deferredQuestion: mapDeferredQuestionToApi(deferredQuestion),

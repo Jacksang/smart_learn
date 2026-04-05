@@ -1,9 +1,14 @@
 jest.mock('./repository', () => ({
   createForProjectSessionAndUser: jest.fn(),
   listForProjectSessionAndUser: jest.fn(),
+  updateStatusForProjectAndUser: jest.fn(),
 }));
 
-const { createForProjectSessionAndUser, listForProjectSessionAndUser } = require('./repository');
+const {
+  createForProjectSessionAndUser,
+  listForProjectSessionAndUser,
+  updateStatusForProjectAndUser,
+} = require('./repository');
 const controller = require('./controller');
 
 function createRes() {
@@ -338,6 +343,136 @@ describe('deferred questions controller', () => {
     });
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json).toHaveBeenCalledWith({ message: 'Project or session not found' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('updates a deferred question state to resolved and returns API-facing payload', async () => {
+    updateStatusForProjectAndUser.mockResolvedValue({
+      id: 'dq-1',
+      project_id: 'project-1',
+      session_id: 'session-1',
+      outline_item_id: 'topic-1',
+      question_text: ' Why does this formula work? ',
+      defer_reason: ' Too deep for the current lesson ',
+      status: 'resolved',
+      brief_response: ' We covered the intuition in the recap. ',
+      created_at: '2026-04-05T08:00:00.000Z',
+      updated_at: '2026-04-05T09:00:00.000Z',
+      resolved_at: '2026-04-05T09:00:00.000Z',
+    });
+
+    const req = {
+      params: { projectId: ' project-1 ', deferredQuestionId: ' dq-1 ' },
+      body: {
+        currentStatus: ' revisited ',
+        status: ' resolved ',
+        briefResponse: ' We covered the intuition in the recap. ',
+        resolvedAt: ' 2026-04-05T09:00:00.000Z ',
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.updateDeferredQuestionState(req, res, next);
+
+    expect(updateStatusForProjectAndUser).toHaveBeenCalledWith({
+      deferredQuestionId: 'dq-1',
+      projectId: 'project-1',
+      userId: 'user-1',
+      status: 'resolved',
+      brief_response: 'We covered the intuition in the recap.',
+      resolved_at: '2026-04-05T09:00:00.000Z',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        deferredQuestion: {
+          id: 'dq-1',
+          projectId: 'project-1',
+          sessionId: 'session-1',
+          outlineItemId: 'topic-1',
+          questionText: 'Why does this formula work?',
+          deferReason: 'Too deep for the current lesson',
+          status: 'resolved',
+          briefResponse: 'We covered the intuition in the recap.',
+          createdAt: '2026-04-05T08:00:00.000Z',
+          updatedAt: '2026-04-05T09:00:00.000Z',
+          resolvedAt: '2026-04-05T09:00:00.000Z',
+        },
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing deferredQuestionId before repository access', async () => {
+    const req = {
+      params: { projectId: 'project-1', deferredQuestionId: '   ' },
+      body: {
+        currentStatus: 'deferred',
+        status: 'revisited',
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.updateDeferredQuestionState(req, res, next);
+
+    expect(updateStatusForProjectAndUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'deferredQuestionId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects unsupported status values before repository access', async () => {
+    const req = {
+      params: { projectId: 'project-1', deferredQuestionId: 'dq-1' },
+      body: {
+        current_status: 'deferred',
+        status: 'later',
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.updateDeferredQuestionState(req, res, next);
+
+    expect(updateStatusForProjectAndUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Unsupported deferred question status: later' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns 404 when the owned deferred question is not found for state updates', async () => {
+    updateStatusForProjectAndUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1', deferredQuestionId: 'dq-missing' },
+      body: {
+        currentStatus: 'deferred',
+        status: 'revisited',
+        briefResponse: 'We will revisit this after the lesson.',
+      },
+      user: { id: 'user-42' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.updateDeferredQuestionState(req, res, next);
+
+    expect(updateStatusForProjectAndUser).toHaveBeenCalledWith({
+      deferredQuestionId: 'dq-missing',
+      projectId: 'project-1',
+      userId: 'user-42',
+      status: 'revisited',
+      brief_response: 'We will revisit this after the lesson.',
+      resolved_at: null,
+    });
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Deferred question not found' });
     expect(next).not.toHaveBeenCalled();
   });
 });
