@@ -161,9 +161,168 @@ async function listTopicProgressAggregates({ projectId, userId, recentAttemptWin
   return result.rows.map(mapTopicProgressAggregateRow);
 }
 
+function mapProgressSnapshotRow(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    project_id: row.project_id,
+    outline_item_id: row.outline_item_id,
+    snapshot_type: row.snapshot_type,
+    completion_percent: row.completion_percent === null ? null : Number(row.completion_percent),
+    mastery_score: row.mastery_score === null ? null : Number(row.mastery_score),
+    progress_state: row.progress_state,
+    weak_areas: row.weak_areas,
+    strength_areas: row.strength_areas,
+    summary_text: row.summary_text,
+    created_at: row.created_at,
+  };
+}
+
+async function createProjectSnapshot({ projectId, userId, snapshot }) {
+  const result = await db.query(
+    `WITH owned_project AS (
+       SELECT p.id
+       FROM learning_projects p
+       WHERE p.id = $1 AND p.user_id = $2
+       LIMIT 1
+     )
+     INSERT INTO progress_snapshots (
+       project_id,
+       outline_item_id,
+       snapshot_type,
+       completion_percent,
+       mastery_score,
+       progress_state,
+       weak_areas,
+       strength_areas,
+       summary_text
+     )
+     SELECT
+       op.id,
+       NULL,
+       $3,
+       $4,
+       $5,
+       $6,
+       $7::jsonb,
+       $8::jsonb,
+       $9
+     FROM owned_project op
+     RETURNING
+       id,
+       project_id,
+       outline_item_id,
+       snapshot_type,
+       completion_percent,
+       mastery_score,
+       progress_state,
+       weak_areas,
+       strength_areas,
+       summary_text,
+       created_at`,
+    [
+      projectId,
+      userId,
+      snapshot.snapshot_type,
+      snapshot.completion_percent,
+      snapshot.mastery_score,
+      snapshot.progress_state,
+      JSON.stringify(snapshot.weak_areas ?? []),
+      JSON.stringify(snapshot.strength_areas ?? []),
+      snapshot.summary_text ?? null,
+    ]
+  );
+
+  return mapProgressSnapshotRow(result.rows[0]);
+}
+
+async function createTopicSnapshots({ projectId, userId, topicSnapshots }) {
+  if (!Array.isArray(topicSnapshots) || topicSnapshots.length === 0) {
+    return [];
+  }
+
+  const normalizedTopicSnapshots = topicSnapshots.map((snapshot) => ({
+    outline_item_id: snapshot.outline_item_id,
+    snapshot_type: snapshot.snapshot_type,
+    completion_percent: snapshot.completion_percent,
+    mastery_score: snapshot.mastery_score,
+    progress_state: snapshot.progress_state,
+    weak_areas: snapshot.weak_areas ?? [],
+    strength_areas: snapshot.strength_areas ?? [],
+    summary_text: snapshot.summary_text ?? null,
+  }));
+
+  const result = await db.query(
+    `WITH owned_project AS (
+       SELECT p.id
+       FROM learning_projects p
+       WHERE p.id = $1 AND p.user_id = $2
+       LIMIT 1
+     ),
+     snapshot_rows AS (
+       SELECT *
+       FROM jsonb_to_recordset($3::jsonb) AS rows(
+         outline_item_id uuid,
+         snapshot_type text,
+         completion_percent numeric,
+         mastery_score numeric,
+         progress_state text,
+         weak_areas jsonb,
+         strength_areas jsonb,
+         summary_text text
+       )
+     )
+     INSERT INTO progress_snapshots (
+       project_id,
+       outline_item_id,
+       snapshot_type,
+       completion_percent,
+       mastery_score,
+       progress_state,
+       weak_areas,
+       strength_areas,
+       summary_text
+     )
+     SELECT
+       op.id,
+       sr.outline_item_id,
+       sr.snapshot_type,
+       sr.completion_percent,
+       sr.mastery_score,
+       sr.progress_state,
+       sr.weak_areas,
+       sr.strength_areas,
+       sr.summary_text
+     FROM owned_project op
+     INNER JOIN snapshot_rows sr ON sr.outline_item_id IS NOT NULL
+     ORDER BY sr.outline_item_id ASC
+     RETURNING
+       id,
+       project_id,
+       outline_item_id,
+       snapshot_type,
+       completion_percent,
+       mastery_score,
+       progress_state,
+       weak_areas,
+       strength_areas,
+       summary_text,
+       created_at`,
+    [projectId, userId, JSON.stringify(normalizedTopicSnapshots)]
+  );
+
+  return result.rows.map(mapProgressSnapshotRow);
+}
+
 module.exports = {
   mapProjectProgressAggregateRow,
   mapTopicProgressAggregateRow,
+  mapProgressSnapshotRow,
   getProjectProgressAggregate,
   listTopicProgressAggregates,
+  createProjectSnapshot,
+  createTopicSnapshots,
 };

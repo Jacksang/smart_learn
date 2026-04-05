@@ -6,6 +6,8 @@ const db = require('../../config/database');
 const {
   getProjectProgressAggregate,
   listTopicProgressAggregates,
+  createProjectSnapshot,
+  createTopicSnapshots,
 } = require('./repository');
 
 describe('progress repository', () => {
@@ -173,5 +175,221 @@ describe('progress repository', () => {
     });
 
     expect(db.query).toHaveBeenCalledWith(expect.any(String), ['project-1', 'user-1', 5]);
+  });
+
+  test('creates one owned project-level progress snapshot row', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'snapshot-project-1',
+          project_id: 'project-1',
+          outline_item_id: null,
+          snapshot_type: 'project_refresh',
+          completion_percent: '62.5',
+          mastery_score: '71.5',
+          progress_state: 'in_progress',
+          weak_areas: [{ outline_item_id: 'item-2', title: 'Fractions' }],
+          strength_areas: [{ outline_item_id: 'item-1', title: 'Addition' }],
+          summary_text: 'Making steady progress overall.',
+          created_at: '2026-04-05T03:00:00.000Z',
+        },
+      ],
+    });
+
+    const snapshot = await createProjectSnapshot({
+      projectId: 'project-1',
+      userId: 'user-1',
+      snapshot: {
+        snapshot_type: 'project_refresh',
+        completion_percent: 62.5,
+        mastery_score: 71.5,
+        progress_state: 'in_progress',
+        weak_areas: [{ outline_item_id: 'item-2', title: 'Fractions' }],
+        strength_areas: [{ outline_item_id: 'item-1', title: 'Addition' }],
+        summary_text: 'Making steady progress overall.',
+      },
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO progress_snapshots'),
+      [
+        'project-1',
+        'user-1',
+        'project_refresh',
+        62.5,
+        71.5,
+        'in_progress',
+        JSON.stringify([{ outline_item_id: 'item-2', title: 'Fractions' }]),
+        JSON.stringify([{ outline_item_id: 'item-1', title: 'Addition' }]),
+        'Making steady progress overall.',
+      ]
+    );
+    expect(db.query.mock.calls[0][0]).toContain('WHERE p.id = $1 AND p.user_id = $2');
+    expect(db.query.mock.calls[0][0]).toContain('NULL,');
+    expect(db.query.mock.calls[0][0]).toContain('$7::jsonb');
+    expect(snapshot).toEqual({
+      id: 'snapshot-project-1',
+      project_id: 'project-1',
+      outline_item_id: null,
+      snapshot_type: 'project_refresh',
+      completion_percent: 62.5,
+      mastery_score: 71.5,
+      progress_state: 'in_progress',
+      weak_areas: [{ outline_item_id: 'item-2', title: 'Fractions' }],
+      strength_areas: [{ outline_item_id: 'item-1', title: 'Addition' }],
+      summary_text: 'Making steady progress overall.',
+      created_at: '2026-04-05T03:00:00.000Z',
+    });
+  });
+
+  test('returns null when project snapshot write is outside owned project scope', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const snapshot = await createProjectSnapshot({
+      projectId: 'project-404',
+      userId: 'user-1',
+      snapshot: {
+        snapshot_type: 'project_refresh',
+        completion_percent: 0,
+        mastery_score: 0,
+        progress_state: 'not_started',
+        weak_areas: [],
+        strength_areas: [],
+        summary_text: 'No progress yet.',
+      },
+    });
+
+    expect(snapshot).toBeNull();
+  });
+
+  test('creates topic-level snapshots in one owned batch insert with stable row mapping', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'snapshot-topic-1',
+          project_id: 'project-1',
+          outline_item_id: 'item-1',
+          snapshot_type: 'topic_refresh',
+          completion_percent: '100',
+          mastery_score: '88.5',
+          progress_state: 'strong',
+          weak_areas: [],
+          strength_areas: [{ title: 'Addition' }],
+          summary_text: 'Strong on Addition.',
+          created_at: '2026-04-05T03:00:00.000Z',
+        },
+        {
+          id: 'snapshot-topic-2',
+          project_id: 'project-1',
+          outline_item_id: 'item-2',
+          snapshot_type: 'topic_refresh',
+          completion_percent: '50',
+          mastery_score: '42',
+          progress_state: 'struggling',
+          weak_areas: [{ title: 'Fractions' }],
+          strength_areas: [],
+          summary_text: 'Needs more work on Fractions.',
+          created_at: '2026-04-05T03:00:01.000Z',
+        },
+      ],
+    });
+
+    const topicSnapshots = [
+      {
+        outline_item_id: 'item-2',
+        snapshot_type: 'topic_refresh',
+        completion_percent: 50,
+        mastery_score: 42,
+        progress_state: 'struggling',
+        weak_areas: [{ title: 'Fractions' }],
+        strength_areas: [],
+        summary_text: 'Needs more work on Fractions.',
+      },
+      {
+        outline_item_id: 'item-1',
+        snapshot_type: 'topic_refresh',
+        completion_percent: 100,
+        mastery_score: 88.5,
+        progress_state: 'strong',
+        weak_areas: [],
+        strength_areas: [{ title: 'Addition' }],
+        summary_text: 'Strong on Addition.',
+      },
+    ];
+
+    const persistedSnapshots = await createTopicSnapshots({
+      projectId: 'project-1',
+      userId: 'user-1',
+      topicSnapshots,
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('jsonb_to_recordset($3::jsonb)'),
+      ['project-1', 'user-1', JSON.stringify(topicSnapshots)]
+    );
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN snapshot_rows sr ON sr.outline_item_id IS NOT NULL');
+    expect(db.query.mock.calls[0][0]).toContain('ORDER BY sr.outline_item_id ASC');
+    expect(persistedSnapshots).toEqual([
+      {
+        id: 'snapshot-topic-1',
+        project_id: 'project-1',
+        outline_item_id: 'item-1',
+        snapshot_type: 'topic_refresh',
+        completion_percent: 100,
+        mastery_score: 88.5,
+        progress_state: 'strong',
+        weak_areas: [],
+        strength_areas: [{ title: 'Addition' }],
+        summary_text: 'Strong on Addition.',
+        created_at: '2026-04-05T03:00:00.000Z',
+      },
+      {
+        id: 'snapshot-topic-2',
+        project_id: 'project-1',
+        outline_item_id: 'item-2',
+        snapshot_type: 'topic_refresh',
+        completion_percent: 50,
+        mastery_score: 42,
+        progress_state: 'struggling',
+        weak_areas: [{ title: 'Fractions' }],
+        strength_areas: [],
+        summary_text: 'Needs more work on Fractions.',
+        created_at: '2026-04-05T03:00:01.000Z',
+      },
+    ]);
+  });
+
+  test('returns empty list without querying when no topic snapshots are provided', async () => {
+    const persistedSnapshots = await createTopicSnapshots({
+      projectId: 'project-1',
+      userId: 'user-1',
+      topicSnapshots: [],
+    });
+
+    expect(db.query).not.toHaveBeenCalled();
+    expect(persistedSnapshots).toEqual([]);
+  });
+
+  test('returns empty list when owned scope check prevents topic snapshot writes', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const persistedSnapshots = await createTopicSnapshots({
+      projectId: 'project-404',
+      userId: 'user-1',
+      topicSnapshots: [
+        {
+          outline_item_id: 'item-1',
+          snapshot_type: 'topic_refresh',
+          completion_percent: 0,
+          mastery_score: 0,
+          progress_state: 'not_started',
+          weak_areas: [],
+          strength_areas: [],
+          summary_text: null,
+        },
+      ],
+    });
+
+    expect(persistedSnapshots).toEqual([]);
   });
 });
