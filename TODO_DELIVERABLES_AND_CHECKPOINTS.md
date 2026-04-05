@@ -95,6 +95,7 @@ Rules for use:
 - [ ] Implement progress snapshots / weak-area logic
 - [ ] Save artifact: working routes + tests
 - [ ] Commit and push
+  - Planning note (2026-04-05): Detailed execution breakdown created in `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`.
 
 ---
 
@@ -165,4 +166,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D1.4.A via `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`
+- [ ] Start D1.5.A via `D1.5_ANSWERS_AND_PROGRESS_SUBCHECKLIST.md`
