@@ -7,6 +7,7 @@ jest.mock('./repository', () => ({
   listRecentByProjectForUser: jest.fn(),
   findNextAttemptNoByQuestionInProject: jest.fn(),
   createAnswerAttempt: jest.fn(),
+  findAttemptWithQuestionContextForProjectAndUser: jest.fn(),
 }));
 
 jest.mock('./service', () => ({
@@ -19,6 +20,7 @@ const {
   listRecentByProjectForUser,
   findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,
+  findAttemptWithQuestionContextForProjectAndUser,
 } = require('./repository');
 const { evaluateAnswerAttempt } = require('./service');
 const controller = require('./controller');
@@ -318,6 +320,101 @@ describe('answers controller', () => {
     expect(findByIdForProjectAndUser).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'userAnswer is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('evaluates a stored project answer attempt with shared evaluation service', async () => {
+    findAttemptWithQuestionContextForProjectAndUser.mockResolvedValue({
+      id: 'attempt-7',
+      project_id: 'project-1',
+      user_answer: { selectedOption: 'B' },
+      question_type: 'multiple_choice',
+      correct_answer: { value: 'B' },
+      explanation: 'Because B is correct.',
+    });
+    evaluateAnswerAttempt.mockReturnValue({
+      isCorrect: true,
+      score: 100,
+      feedbackText: 'Correct',
+      explanation: 'Because B is correct.',
+    });
+
+    const req = {
+      params: { projectId: ' project-1 ' },
+      body: { answer_attempt_id: ' attempt-7 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.evaluateProjectAnswers(req, res, next);
+
+    expect(findAttemptWithQuestionContextForProjectAndUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-7',
+      userId: 'user-1',
+    });
+    expect(evaluateAnswerAttempt).toHaveBeenCalledWith({
+      question: {
+        question_type: 'multiple_choice',
+        correct_answer: { value: 'B' },
+        explanation: 'Because B is correct.',
+      },
+      userAnswer: { selectedOption: 'B' },
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-7',
+      evaluation: {
+        isCorrect: true,
+        score: 100,
+        feedbackText: 'Correct',
+        explanation: 'Because B is correct.',
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing answerAttemptId for explicit evaluation', async () => {
+    const req = {
+      params: { projectId: 'project-1' },
+      body: {},
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.evaluateProjectAnswers(req, res, next);
+
+    expect(findAttemptWithQuestionContextForProjectAndUser).not.toHaveBeenCalled();
+    expect(evaluateAnswerAttempt).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'answerAttemptId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns 404 when explicit evaluation cannot load an owned answer attempt', async () => {
+    findAttemptWithQuestionContextForProjectAndUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      body: { answerAttemptId: 'attempt-missing' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.evaluateProjectAnswers(req, res, next);
+
+    expect(findAttemptWithQuestionContextForProjectAndUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-missing',
+      userId: 'user-1',
+    });
+    expect(evaluateAnswerAttempt).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Answer attempt not found' });
     expect(next).not.toHaveBeenCalled();
   });
 });

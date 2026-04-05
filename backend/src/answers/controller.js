@@ -4,6 +4,7 @@ const {
   listRecentByProjectForUser,
   findNextAttemptNoByQuestionInProject,
   createAnswerAttempt,
+  findAttemptWithQuestionContextForProjectAndUser,
 } = require('./repository');
 const { evaluateAnswerAttempt } = require('./service');
 
@@ -185,8 +186,44 @@ exports.submitProjectAnswer = async (req, res, next) => {
   }
 };
 
-exports.evaluateProjectAnswers = async (req, res) =>
-  res.status(501).json({
-    message: 'Project-scoped answer evaluation scaffold is not implemented yet.',
-    detail: 'Complete D1.5.D to evaluate answer attempts through this route.',
-  });
+exports.evaluateProjectAnswers = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const answerAttemptId = normalizeString(req.body?.answerAttemptId ?? req.body?.answer_attempt_id);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    if (!answerAttemptId) {
+      return res.status(400).json({ message: 'answerAttemptId is required' });
+    }
+
+    const answerAttempt = await findAttemptWithQuestionContextForProjectAndUser({
+      projectId,
+      answerAttemptId,
+      userId: req.user.id,
+    });
+
+    if (!answerAttempt) {
+      return res.status(404).json({ message: 'Answer attempt not found' });
+    }
+
+    const evaluation = evaluateAnswerAttempt({
+      question: {
+        question_type: answerAttempt.question_type,
+        correct_answer: answerAttempt.correct_answer,
+        explanation: answerAttempt.explanation,
+      },
+      userAnswer: answerAttempt.user_answer,
+    });
+
+    return res.status(200).json({
+      projectId,
+      answerAttemptId,
+      evaluation,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
