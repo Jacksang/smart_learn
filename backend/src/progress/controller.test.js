@@ -21,6 +21,7 @@ const {
   buildProjectProgressSnapshot,
 } = require('./service');
 const controller = require('./controller');
+const router = require('./router');
 
 function createRes() {
   return {
@@ -32,6 +33,17 @@ function createRes() {
 describe('progress controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('registers the protected project-scoped refresh route', () => {
+    const refreshLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/progress/refresh'
+    );
+
+    expect(refreshLayer).toBeDefined();
+    expect(refreshLayer.route.methods.post).toBe(true);
+    expect(refreshLayer.route.stack).toHaveLength(2);
+    expect(refreshLayer.route.stack[1].handle).toBe(controller.refreshProjectProgress);
   });
 
   test('refreshes project progress, persists project/topic snapshots, and returns API-facing payload', async () => {
