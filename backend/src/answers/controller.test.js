@@ -5,10 +5,22 @@ jest.mock('../questions/repository', () => ({
 jest.mock('./repository', () => ({
   listByQuestionForProjectAndUser: jest.fn(),
   listRecentByProjectForUser: jest.fn(),
+  findNextAttemptNoByQuestionInProject: jest.fn(),
+  createAnswerAttempt: jest.fn(),
+}));
+
+jest.mock('./service', () => ({
+  evaluateAnswerAttempt: jest.fn(),
 }));
 
 const { findByIdForProjectAndUser } = require('../questions/repository');
-const { listByQuestionForProjectAndUser, listRecentByProjectForUser } = require('./repository');
+const {
+  listByQuestionForProjectAndUser,
+  listRecentByProjectForUser,
+  findNextAttemptNoByQuestionInProject,
+  createAnswerAttempt,
+} = require('./repository');
+const { evaluateAnswerAttempt } = require('./service');
 const controller = require('./controller');
 
 function createRes() {
@@ -115,16 +127,124 @@ describe('answers controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  test('keeps project-scoped submit scaffold explicit for D1.5.C', async () => {
-    const req = { params: { projectId: 'project-1', questionId: 'question-1' }, body: {}, user: { id: 'user-1' } };
-    const res = createRes();
-
-    await controller.submitProjectAnswer(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(501);
-    expect(res.json).toHaveBeenCalledWith({
-      message: 'Project-scoped answer submission scaffold is aligned to answer_attempts but not implemented yet.',
-      detail: 'Complete D1.5.C to persist and evaluate answer attempts through this route.',
+  test('submits a project-scoped answer attempt after ownership check and evaluation', async () => {
+    findByIdForProjectAndUser.mockResolvedValue({
+      id: 'question-1',
+      project_id: 'project-1',
+      question_type: 'multiple_choice',
+      correct_answer: { value: 'B' },
+      explanation: 'Because B is correct.',
     });
+    evaluateAnswerAttempt.mockReturnValue({
+      isCorrect: true,
+      score: 100,
+      feedbackText: 'Correct',
+      explanation: 'Because B is correct.',
+    });
+    findNextAttemptNoByQuestionInProject.mockResolvedValue(3);
+    createAnswerAttempt.mockResolvedValue({
+      id: 'attempt-3',
+      question_id: 'question-1',
+      project_id: 'project-1',
+      session_id: 'session-1',
+      user_answer: { selectedOption: 'B' },
+      is_correct: true,
+      score: 100,
+      feedback_text: 'Correct',
+      attempt_no: 3,
+      answered_at: '2026-04-05T01:10:00Z',
+    });
+
+    const req = {
+      params: { projectId: ' project-1 ', questionId: ' question-1 ' },
+      body: {
+        projectId: 'project-1',
+        question_id: 'question-1',
+        session_id: ' session-1 ',
+        userAnswer: { selectedOption: 'B' },
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.submitProjectAnswer(req, res, next);
+
+    expect(findByIdForProjectAndUser).toHaveBeenCalledWith('question-1', 'project-1', 'user-1');
+    expect(evaluateAnswerAttempt).toHaveBeenCalledWith({
+      question: expect.objectContaining({ id: 'question-1' }),
+      userAnswer: { selectedOption: 'B' },
+    });
+    expect(findNextAttemptNoByQuestionInProject).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      questionId: 'question-1',
+    });
+    expect(createAnswerAttempt).toHaveBeenCalledWith({
+      questionId: 'question-1',
+      projectId: 'project-1',
+      sessionId: 'session-1',
+      userAnswer: { selectedOption: 'B' },
+      isCorrect: true,
+      score: 100,
+      feedbackText: 'Correct',
+      attemptNo: 3,
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        answerAttempt: {
+          id: 'attempt-3',
+          questionId: 'question-1',
+          projectId: 'project-1',
+          sessionId: 'session-1',
+          userAnswer: { selectedOption: 'B' },
+          isCorrect: true,
+          score: 100,
+          feedbackText: 'Correct',
+          attemptNo: 3,
+          answeredAt: '2026-04-05T01:10:00Z',
+          explanation: 'Because B is correct.',
+        },
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects mismatched body identifiers before submission', async () => {
+    const req = {
+      params: { projectId: 'project-1', questionId: 'question-1' },
+      body: {
+        projectId: 'project-2',
+        userAnswer: { value: 'A' },
+      },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.submitProjectAnswer(req, res, next);
+
+    expect(findByIdForProjectAndUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId in body must match route projectId' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('requires userAnswer for project-scoped submission', async () => {
+    const req = {
+      params: { projectId: 'project-1', questionId: 'question-1' },
+      body: { sessionId: 'session-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.submitProjectAnswer(req, res, next);
+
+    expect(findByIdForProjectAndUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'userAnswer is required' });
+    expect(next).not.toHaveBeenCalled();
   });
 });

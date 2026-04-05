@@ -20,6 +20,7 @@ const materialRoutes = require('../src/materials/router');
 // Mount routes
 app.use('/api/users', userRoutes);
 app.use('/api/outline', outlineRoutes);
+app.use('/api', answerRoutes);
 app.use('/api/answers', answerRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/materials', materialRoutes);

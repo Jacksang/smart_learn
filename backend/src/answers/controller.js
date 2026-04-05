@@ -2,7 +2,10 @@ const { findByIdForProjectAndUser } = require('../questions/repository');
 const {
   listByQuestionForProjectAndUser,
   listRecentByProjectForUser,
+  findNextAttemptNoByQuestionInProject,
+  createAnswerAttempt,
 } = require('./repository');
+const { evaluateAnswerAttempt } = require('./service');
 
 function normalizeString(value) {
   if (value === undefined || value === null) {
@@ -24,6 +27,38 @@ function parsePositiveInteger(value, fallback) {
   }
 
   return parsed;
+}
+
+function normalizeSessionId(body = {}) {
+  return normalizeString(body.sessionId ?? body.session_id);
+}
+
+function normalizeUserAnswer(body = {}) {
+  if (Object.prototype.hasOwnProperty.call(body, 'userAnswer')) {
+    return body.userAnswer;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'user_answer')) {
+    return body.user_answer;
+  }
+
+  return undefined;
+}
+
+function mapAnswerAttemptToApi(answerAttempt, explanation) {
+  return {
+    id: answerAttempt.id,
+    questionId: answerAttempt.question_id,
+    projectId: answerAttempt.project_id,
+    sessionId: answerAttempt.session_id,
+    userAnswer: answerAttempt.user_answer,
+    isCorrect: answerAttempt.is_correct,
+    score: answerAttempt.score,
+    feedbackText: answerAttempt.feedback_text,
+    attemptNo: answerAttempt.attempt_no,
+    answeredAt: answerAttempt.answered_at,
+    explanation: explanation ?? undefined,
+  };
 }
 
 exports.listQuestionAnswers = async (req, res, next) => {
@@ -84,11 +119,71 @@ exports.listProjectAnswerHistory = async (req, res, next) => {
   }
 };
 
-exports.submitProjectAnswer = async (req, res) =>
-  res.status(501).json({
-    message: 'Project-scoped answer submission scaffold is aligned to answer_attempts but not implemented yet.',
-    detail: 'Complete D1.5.C to persist and evaluate answer attempts through this route.',
-  });
+exports.submitProjectAnswer = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const questionId = normalizeString(req.params.questionId);
+    const bodyProjectId = normalizeString(req.body?.projectId ?? req.body?.project_id);
+    const bodyQuestionId = normalizeString(req.body?.questionId ?? req.body?.question_id);
+    const sessionId = normalizeSessionId(req.body);
+    const userAnswer = normalizeUserAnswer(req.body);
+
+    if (!projectId || !questionId) {
+      return res.status(400).json({ message: 'projectId and questionId are required' });
+    }
+
+    if (bodyProjectId && bodyProjectId !== projectId) {
+      return res.status(400).json({ message: 'projectId in body must match route projectId' });
+    }
+
+    if (bodyQuestionId && bodyQuestionId !== questionId) {
+      return res.status(400).json({ message: 'questionId in body must match route questionId' });
+    }
+
+    if (userAnswer === undefined) {
+      return res.status(400).json({ message: 'userAnswer is required' });
+    }
+
+    if ((req.body?.sessionId !== undefined || req.body?.session_id !== undefined) && !sessionId) {
+      return res.status(400).json({ message: 'sessionId must be a non-empty string when provided' });
+    }
+
+    const question = await findByIdForProjectAndUser(questionId, projectId, req.user.id);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const evaluation = evaluateAnswerAttempt({
+      question,
+      userAnswer,
+    });
+
+    const attemptNo = await findNextAttemptNoByQuestionInProject({
+      projectId,
+      questionId,
+    });
+
+    const answerAttempt = await createAnswerAttempt({
+      questionId,
+      projectId,
+      sessionId,
+      userAnswer,
+      isCorrect: evaluation.isCorrect,
+      score: evaluation.score,
+      feedbackText: evaluation.feedbackText,
+      attemptNo,
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        answerAttempt: mapAnswerAttemptToApi(answerAttempt, evaluation.explanation),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 exports.evaluateProjectAnswers = async (req, res) =>
   res.status(501).json({
