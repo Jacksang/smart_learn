@@ -5,6 +5,7 @@ const {
   createTopicSnapshots,
   findLatestProjectSnapshotForUser,
   findLatestTopicSnapshotForUser,
+  findLatestWeakAreasForUser,
 } = require('./repository');
 const {
   buildTopicProgressSnapshots,
@@ -84,6 +85,27 @@ exports.getTopicProgress = async (req, res, next) => {
       projectId,
       itemId,
       progressSnapshot: mapPersistedSnapshotToApi(progressSnapshot),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getProjectWeakAreas = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    const userId = req.user.id;
+    const weakAreaSummary = await findLatestWeakAreasForUser({ projectId, userId });
+
+    return res.status(200).json({
+      projectId,
+      weakAreas: weakAreaSummary?.weak_areas ?? [],
+      summaryText: weakAreaSummary?.summary_text ?? null,
     });
   } catch (error) {
     return next(error);

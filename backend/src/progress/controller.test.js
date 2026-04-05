@@ -5,6 +5,7 @@ jest.mock('./repository', () => ({
   createTopicSnapshots: jest.fn(),
   findLatestProjectSnapshotForUser: jest.fn(),
   findLatestTopicSnapshotForUser: jest.fn(),
+  findLatestWeakAreasForUser: jest.fn(),
 }));
 
 jest.mock('./service', () => ({
@@ -19,6 +20,7 @@ const {
   createTopicSnapshots,
   findLatestProjectSnapshotForUser,
   findLatestTopicSnapshotForUser,
+  findLatestWeakAreasForUser,
 } = require('./repository');
 const {
   buildTopicProgressSnapshots,
@@ -263,6 +265,93 @@ describe('progress controller', () => {
     expect(findLatestTopicSnapshotForUser).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'itemId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns the latest weak-area payload for an owned project', async () => {
+    findLatestWeakAreasForUser.mockResolvedValue({
+      project_id: 'project-1',
+      weak_areas: [
+        {
+          outlineItemId: 'item-2',
+          title: 'Fractions',
+          masteryScore: 42,
+          completionPercent: 60,
+          progressState: 'needs_attention',
+        },
+      ],
+      summary_text: 'Fractions need more review.',
+      created_at: '2026-04-05T04:30:00.000Z',
+    });
+
+    const req = {
+      params: { projectId: ' project-1 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectWeakAreas(req, res, next);
+
+    expect(findLatestWeakAreasForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      weakAreas: [
+        {
+          outlineItemId: 'item-2',
+          title: 'Fractions',
+          masteryScore: 42,
+          completionPercent: 60,
+          progressState: 'needs_attention',
+        },
+      ],
+      summaryText: 'Fractions need more review.',
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns an empty weak-area payload when no persisted project snapshot exists yet', async () => {
+    findLatestWeakAreasForUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectWeakAreas(req, res, next);
+
+    expect(findLatestWeakAreasForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      weakAreas: [],
+      summaryText: null,
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing projectId for weak-area retrieval before repository access', async () => {
+    const req = {
+      params: { projectId: '   ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectWeakAreas(req, res, next);
+
+    expect(findLatestWeakAreasForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
     expect(next).not.toHaveBeenCalled();
   });
 
