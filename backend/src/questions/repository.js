@@ -88,6 +88,17 @@ async function findByIdForProjectAndUser(questionId, projectId, userId) {
   return mapQuestionRow(result.rows[0]);
 }
 
+async function findMaxBatchNoForProjectOutlineItem(projectId, outlineItemId) {
+  const result = await db.query(
+    `SELECT COALESCE(MAX(batch_no), 0) AS max_batch_no
+     FROM questions
+     WHERE project_id = $1 AND outline_item_id = $2`,
+    [projectId, outlineItemId]
+  );
+
+  return Number(result.rows[0]?.max_batch_no || 0);
+}
+
 async function insertQuestionBatch(questions = []) {
   if (questions.length === 0) {
     return [];
@@ -144,5 +155,6 @@ module.exports = {
   mapQuestionRow,
   listByProjectForUser,
   findByIdForProjectAndUser,
+  findMaxBatchNoForProjectOutlineItem,
   insertQuestionBatch,
 };

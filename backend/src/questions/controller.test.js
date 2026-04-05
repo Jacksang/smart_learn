@@ -1,6 +1,7 @@
 jest.mock('./repository', () => ({
   listByProjectForUser: jest.fn(),
   findByIdForProjectAndUser: jest.fn(),
+  findMaxBatchNoForProjectOutlineItem: jest.fn(),
   insertQuestionBatch: jest.fn(),
 }));
 
@@ -12,6 +13,7 @@ jest.mock('./service', () => ({
 const {
   listByProjectForUser,
   findByIdForProjectAndUser,
+  findMaxBatchNoForProjectOutlineItem,
   insertQuestionBatch,
 } = require('./repository');
 const { generateQuestionBatch } = require('./service');
@@ -136,6 +138,58 @@ describe('questions controller', () => {
       projectId: 'project-1',
       outlineItemId: 'item-1',
       batchNo: 1,
+      batchSize: 5,
+      questions: insertedQuestions,
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('generates the next question batch using the next batch number for the outline item scope', async () => {
+    findMaxBatchNoForProjectOutlineItem.mockResolvedValue(2);
+    generateQuestionBatch.mockResolvedValue({
+      outlineItem: { id: 'item-1' },
+      questions: Array.from({ length: 5 }, (_, index) => ({
+        project_id: 'project-1',
+        outline_item_id: 'item-1',
+        batch_no: 3,
+        position_in_batch: index + 1,
+      })),
+    });
+    const insertedQuestions = Array.from({ length: 5 }, (_, index) => ({
+      id: `question-next-${index + 1}`,
+      project_id: 'project-1',
+      outline_item_id: 'item-1',
+      batch_no: 3,
+      position_in_batch: index + 1,
+    }));
+    insertQuestionBatch.mockResolvedValue(insertedQuestions);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      body: { outlineItemId: 'item-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.generateNextProjectQuestionBatch(req, res, next);
+
+    expect(findMaxBatchNoForProjectOutlineItem).toHaveBeenCalledWith('project-1', 'item-1');
+    expect(generateQuestionBatch).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+      outlineItemId: 'item-1',
+      batchSize: 5,
+      difficultyLevel: undefined,
+      questionTypes: undefined,
+      batchNo: 3,
+    });
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith({
+      message: 'Question batch generated',
+      projectId: 'project-1',
+      outlineItemId: 'item-1',
+      batchNo: 3,
       batchSize: 5,
       questions: insertedQuestions,
     });

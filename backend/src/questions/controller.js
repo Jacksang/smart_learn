@@ -1,6 +1,7 @@
 const {
   listByProjectForUser,
   findByIdForProjectAndUser,
+  findMaxBatchNoForProjectOutlineItem,
   insertQuestionBatch,
 } = require('./repository');
 const { generateQuestionBatch, DEFAULT_BATCH_SIZE } = require('./service');
@@ -48,27 +49,41 @@ exports.getProjectQuestion = async (req, res, next) => {
   }
 };
 
-exports.generateProjectQuestions = async (req, res, next) => {
-  try {
-    const input = normalizeGenerateQuestionsBody(req.body);
+function buildGenerateQuestionsInput(req) {
+  const input = normalizeGenerateQuestionsBody(req.body);
 
-    if (!input.outlineItemId || !String(input.outlineItemId).trim()) {
-      return res.status(400).json({ message: 'outlineItemId is required' });
-    }
+  if (!input.outlineItemId || !String(input.outlineItemId).trim()) {
+    return { error: { status: 400, body: { message: 'outlineItemId is required' } } };
+  }
 
-    const parsedBatchSize = input.batchSize === undefined ? DEFAULT_BATCH_SIZE : Number(input.batchSize);
-    if (!Number.isInteger(parsedBatchSize) || parsedBatchSize <= 0) {
-      return res.status(400).json({ message: 'batchSize must be a positive integer' });
-    }
+  const parsedBatchSize = input.batchSize === undefined ? DEFAULT_BATCH_SIZE : Number(input.batchSize);
+  if (!Number.isInteger(parsedBatchSize) || parsedBatchSize <= 0) {
+    return { error: { status: 400, body: { message: 'batchSize must be a positive integer' } } };
+  }
 
-    const generation = await generateQuestionBatch({
+  return {
+    input: {
       projectId: req.params.projectId,
       userId: req.user.id,
       outlineItemId: String(input.outlineItemId).trim(),
       batchSize: parsedBatchSize,
       difficultyLevel: input.difficultyLevel,
       questionTypes: input.questionTypes,
-      batchNo: 1,
+    },
+  };
+}
+
+async function generateQuestionsResponse(req, res, next, resolveBatchNo) {
+  try {
+    const result = buildGenerateQuestionsInput(req);
+    if (result.error) {
+      return res.status(result.error.status).json(result.error.body);
+    }
+
+    const batchNo = await resolveBatchNo(result.input);
+    const generation = await generateQuestionBatch({
+      ...result.input,
+      batchNo,
     });
 
     const questions = await insertQuestionBatch(generation.questions);
@@ -77,7 +92,7 @@ exports.generateProjectQuestions = async (req, res, next) => {
       message: 'Question batch generated',
       projectId: req.params.projectId,
       outlineItemId: generation.outlineItem.id,
-      batchNo: questions[0]?.batch_no || 1,
+      batchNo: questions[0]?.batch_no || batchNo,
       batchSize: questions.length,
       questions,
     });
@@ -95,6 +110,19 @@ exports.generateProjectQuestions = async (req, res, next) => {
 
     return next(error);
   }
-};
+}
+
+exports.generateProjectQuestions = async (req, res, next) => generateQuestionsResponse(req, res, next, async () => 1);
+
+exports.generateNextProjectQuestionBatch = async (req, res, next) => generateQuestionsResponse(
+  req,
+  res,
+  next,
+  async (input) => {
+    const currentMaxBatchNo = await findMaxBatchNoForProjectOutlineItem(input.projectId, input.outlineItemId);
+    return currentMaxBatchNo + 1;
+  }
+);
 
 exports.normalizeGenerateQuestionsBody = normalizeGenerateQuestionsBody;
+exports.buildGenerateQuestionsInput = buildGenerateQuestionsInput;
