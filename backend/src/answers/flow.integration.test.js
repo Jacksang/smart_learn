@@ -147,6 +147,39 @@ function createAnswersFlowQueryRouter() {
       return { rows };
     }
 
+    if (
+      text.includes('FROM answer_attempts aa')
+      && text.includes('INNER JOIN learning_projects p ON p.id = aa.project_id AND p.user_id = $3')
+      && text.includes('AND aa.id = $2')
+      && text.includes('LIMIT 1')
+    ) {
+      const [projectId, answerAttemptId, userId] = params;
+      if (userId !== state.project.user_id) {
+        return { rows: [] };
+      }
+
+      const attempt = state.attempts.find(
+        (candidate) => candidate.project_id === projectId && candidate.id === answerAttemptId
+      );
+      if (!attempt) {
+        return { rows: [] };
+      }
+
+      return {
+        rows: [
+          {
+            ...attempt,
+            question_prompt: state.question.prompt,
+            question_type: state.question.question_type,
+            correct_answer: state.question.correct_answer,
+            explanation: state.question.explanation,
+            outline_item_id: state.question.outline_item_id,
+            project_owner_user_id: state.project.user_id,
+          },
+        ],
+      };
+    }
+
     throw new Error(`Unexpected query: ${text} :: ${JSON.stringify(params)}`);
   };
 }
@@ -340,6 +373,69 @@ describe('answers flow integration', () => {
           },
         },
       ],
+    });
+
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('explicitly re-evaluates a persisted attempt by answerAttemptId using stored attempt and question context', async () => {
+    const next = jest.fn();
+
+    const submitRes = createRes();
+    await answersController.submitProjectAnswer(
+      {
+        params: { projectId: 'project-1', questionId: 'question-1' },
+        body: {
+          sessionId: 'session-explicit-eval',
+          userAnswer: { value: 'Nucleus' },
+        },
+        user: { id: 'user-1' },
+      },
+      submitRes,
+      next
+    );
+
+    const evaluateRes = createRes();
+    await answersController.evaluateProjectAnswers(
+      {
+        params: { projectId: 'project-1' },
+        body: { answerAttemptId: 'attempt-1' },
+        user: { id: 'user-1' },
+      },
+      evaluateRes,
+      next
+    );
+
+    expect(submitRes.status).toHaveBeenCalledWith(201);
+    expect(submitRes.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        answerAttempt: {
+          id: 'attempt-1',
+          questionId: 'question-1',
+          projectId: 'project-1',
+          sessionId: 'session-explicit-eval',
+          userAnswer: { value: 'Nucleus' },
+          isCorrect: false,
+          score: 0,
+          feedbackText: 'Incorrect. Expected: Cell membrane',
+          attemptNo: 1,
+          answeredAt: '2026-04-05T00:00:01Z',
+          explanation: 'The cell membrane regulates what enters and leaves the cell.',
+        },
+      },
+    });
+
+    expect(evaluateRes.status).toHaveBeenCalledWith(200);
+    expect(evaluateRes.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      answerAttemptId: 'attempt-1',
+      evaluation: {
+        isCorrect: false,
+        score: 0,
+        feedbackText: 'Incorrect. Expected: Cell membrane',
+        explanation: 'The cell membrane regulates what enters and leaves the cell.',
+      },
     });
 
     expect(next).not.toHaveBeenCalled();
