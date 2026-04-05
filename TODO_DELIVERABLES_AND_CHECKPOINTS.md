@@ -110,6 +110,7 @@ Rules for use:
 - [ ] Track current mode and current topic
 - [ ] Save artifact: session model + routes/tests
 - [ ] Commit and push
+  - Planning artifact (2026-04-05): Function-level breakdown created in `D2.1_LEARNING_SESSIONS_FUNCTION_BREAKDOWN.md`.
 
 ### D2.2 Deferred questions / parking lot
 - [ ] Implement deferred question storage
