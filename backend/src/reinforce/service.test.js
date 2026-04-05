@@ -1,6 +1,7 @@
 const {
   detectStruggleSignals,
   chooseRecoveryAction,
+  selectEasierFallbackQuestion,
   getRecoveryRecommendation,
 } = require('./service');
 
@@ -26,6 +27,7 @@ describe('reinforce service', () => {
       currentMode: 'quiz',
       targetOutlineItemId: 'topic-fractions',
       supportMessage: 'This concept is still wobbly, so let’s switch to a simpler version and lock in the foundation.',
+      easierQuestionFallback: null,
       signals: {
         sessionProgressStruggling: false,
         weakAreaStruggling: false,
@@ -57,6 +59,7 @@ describe('reinforce service', () => {
     expect(recommendation.reasonCode).toBe('incorrect_attempt_on_weak_area');
     expect(recommendation.recommendedAction).toBe('review');
     expect(recommendation.supportMessage).toBe('Let’s slow it down and isolate the key idea before we push ahead.');
+    expect(recommendation.easierQuestionFallback).toBe(null);
   });
 
   test('detects confidence-drop struggle signals and recommends reinforce mode', () => {
@@ -77,6 +80,7 @@ describe('reinforce service', () => {
     expect(recommendation.reasonCode).toBe('confidence_drop');
     expect(recommendation.recommendedAction).toBe('reinforce');
     expect(recommendation.supportMessage).toBe('Let’s lower the pressure and get one small win first.');
+    expect(recommendation.easierQuestionFallback).toBe(null);
   });
 
   test('inherits an existing struggling progress state even without fresh misses', () => {
@@ -120,6 +124,7 @@ describe('reinforce service', () => {
       currentMode: 'learn',
       targetOutlineItemId: 'topic-addition',
       supportMessage: 'Nice work — you can keep building from here.',
+      easierQuestionFallback: null,
       signals: {
         sessionProgressStruggling: false,
         weakAreaStruggling: false,
@@ -147,5 +152,112 @@ describe('reinforce service', () => {
     expect(recommendation.isStruggling).toBe(true);
     expect(recommendation.targetOutlineItemId).toBe(null);
     expect(recommendation.recommendedAction).toBe('fallback_easier_question');
+    expect(recommendation.easierQuestionFallback).toBe(null);
+  });
+
+  test('selects the easiest unattempted fallback question on the same topic', () => {
+    const recommendation = getRecoveryRecommendation({
+      session: {
+        mode: 'quiz',
+        currentOutlineItemId: 'topic-fractions',
+      },
+      currentQuestion: {
+        id: 'question-hard-current',
+        outlineItemId: 'topic-fractions',
+        difficultyLevel: 'hard',
+        questionType: 'short_answer',
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-fractions', questionId: 'question-hard-current', isCorrect: false },
+        { outlineItemId: 'topic-fractions', questionId: 'question-medium-old', isCorrect: false },
+      ],
+      questionCandidates: [
+        {
+          id: 'question-medium-old',
+          outlineItemId: 'topic-fractions',
+          difficultyLevel: 'medium',
+          questionType: 'multiple_choice',
+          prompt: 'Old medium question',
+        },
+        {
+          id: 'question-easy-best',
+          outlineItemId: 'topic-fractions',
+          difficultyLevel: 'easy',
+          questionType: 'true_false',
+          prompt: 'Easy same-topic fallback',
+        },
+        {
+          id: 'question-easy-other-topic',
+          outlineItemId: 'topic-decimals',
+          difficultyLevel: 'easy',
+          questionType: 'true_false',
+          prompt: 'Wrong topic',
+        },
+      ],
+      weakAreas: [],
+    });
+
+    expect(recommendation.recommendedAction).toBe('fallback_easier_question');
+    expect(recommendation.easierQuestionFallback).toEqual({
+      questionId: 'question-easy-best',
+      outlineItemId: 'topic-fractions',
+      difficultyLevel: 'easy',
+      questionType: 'true_false',
+      prompt: 'Easy same-topic fallback',
+    });
+  });
+
+  test('returns no fallback question when no easier same-topic candidate exists', () => {
+    const struggleSignals = detectStruggleSignals({
+      session: {
+        mode: 'quiz',
+        currentOutlineItemId: 'topic-fractions',
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-fractions', questionId: 'question-medium-current', isCorrect: false },
+        { outlineItemId: 'topic-fractions', questionId: 'question-hard-old', isCorrect: false },
+      ],
+      weakAreas: [],
+    });
+
+    const fallback = selectEasierFallbackQuestion({
+      struggleSignals,
+      session: {
+        mode: 'quiz',
+        currentOutlineItemId: 'topic-fractions',
+      },
+      currentQuestion: {
+        id: 'question-medium-current',
+        outlineItemId: 'topic-fractions',
+        difficultyLevel: 'medium',
+        questionType: 'multiple_choice',
+      },
+      recentAttempts: [
+        { outlineItemId: 'topic-fractions', questionId: 'question-medium-current', isCorrect: false },
+        { outlineItemId: 'topic-fractions', questionId: 'question-hard-old', isCorrect: false },
+      ],
+      questionCandidates: [
+        {
+          id: 'question-hard-next',
+          outlineItemId: 'topic-fractions',
+          difficultyLevel: 'hard',
+          questionType: 'short_answer',
+        },
+        {
+          id: 'question-medium-repeat',
+          outlineItemId: 'topic-fractions',
+          difficultyLevel: 'medium',
+          questionType: 'multiple_choice',
+        },
+        {
+          id: 'question-easy-other-topic',
+          outlineItemId: 'topic-decimals',
+          difficultyLevel: 'easy',
+          questionType: 'true_false',
+        },
+      ],
+    });
+
+    expect(fallback).toBe(null);
   });
 });

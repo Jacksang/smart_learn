@@ -4,6 +4,8 @@ const RECOVERY_ACTIONS = ['continue', 'review', 'reinforce', 'fallback_easier_qu
 const LOW_CONFIDENCE_THRESHOLD = 0.4;
 const MIN_CONFIDENCE_DROP = 0.25;
 const MAX_RECENT_ATTEMPTS = 5;
+const DIFFICULTY_LEVEL_ORDER = ['easy', 'medium', 'hard'];
+const QUESTION_TYPE_EASINESS_ORDER = ['true_false', 'multiple_choice', 'short_answer'];
 
 function hasOwn(object, key) {
   return Object.prototype.hasOwnProperty.call(object, key);
@@ -77,6 +79,33 @@ function normalizeWeakArea(area = {}) {
     outlineItemId: normalizeCurrentTopicId(area.outlineItemId ?? area.outline_item_id),
     progressState: normalizeNullableText(area.progressState ?? area.progress_state)?.toLowerCase() || null,
     title: normalizeNullableText(area.title),
+  };
+}
+
+function normalizeDifficultyLevel(value) {
+  const normalized = normalizeNullableText(value)?.toLowerCase() || null;
+  return DIFFICULTY_LEVEL_ORDER.includes(normalized) ? normalized : null;
+}
+
+function normalizeQuestionType(value) {
+  const normalized = normalizeNullableText(value)?.toLowerCase() || null;
+  return QUESTION_TYPE_EASINESS_ORDER.includes(normalized) ? normalized : normalized;
+}
+
+function normalizeQuestionCandidate(question = {}) {
+  return {
+    id: normalizeNullableText(question.id ?? question.questionId ?? question.question_id),
+    outlineItemId: normalizeCurrentTopicId(
+      question.outlineItemId
+      ?? question.outline_item_id
+      ?? question.currentOutlineItemId
+      ?? question.current_outline_item_id
+      ?? question.topicId
+      ?? question.topic_id
+    ),
+    difficultyLevel: normalizeDifficultyLevel(question.difficultyLevel ?? question.difficulty_level),
+    questionType: normalizeQuestionType(question.questionType ?? question.question_type),
+    prompt: normalizeNullableText(question.prompt),
   };
 }
 
@@ -240,6 +269,99 @@ function detectStruggleSignals({ recentAttempts = [], session = {}, weakAreas = 
   };
 }
 
+function getDifficultyRank(value) {
+  const index = DIFFICULTY_LEVEL_ORDER.indexOf(normalizeDifficultyLevel(value));
+  return index === -1 ? null : index;
+}
+
+function getQuestionTypeRank(value) {
+  const index = QUESTION_TYPE_EASINESS_ORDER.indexOf(normalizeQuestionType(value));
+  return index === -1 ? QUESTION_TYPE_EASINESS_ORDER.length : index;
+}
+
+function selectEasierFallbackQuestion({
+  struggleSignals = {},
+  session = {},
+  recentAttempts = [],
+  questionCandidates = [],
+  currentQuestion = {},
+} = {}) {
+  if (!struggleSignals.isStruggling) {
+    return null;
+  }
+
+  const normalizedSession = normalizeSessionState(session);
+  const normalizedCurrentQuestion = normalizeQuestionCandidate(currentQuestion);
+  const targetOutlineItemId = struggleSignals.targetOutlineItemId || normalizedCurrentQuestion.outlineItemId || normalizedSession.currentOutlineItemId;
+  const currentQuestionDifficultyRank = getDifficultyRank(normalizedCurrentQuestion.difficultyLevel);
+  const attemptedQuestionIds = new Set(
+    recentAttempts
+      .map((attempt) => normalizeNullableText(attempt.questionId ?? attempt.question_id))
+      .filter(Boolean)
+  );
+
+  const rankedCandidates = questionCandidates
+    .map(normalizeQuestionCandidate)
+    .filter((candidate) => candidate.id)
+    .filter((candidate) => candidate.id !== normalizedCurrentQuestion.id)
+    .filter((candidate) => !attemptedQuestionIds.has(candidate.id))
+    .map((candidate) => {
+      const candidateDifficultyRank = getDifficultyRank(candidate.difficultyLevel);
+      const sameTopic = Boolean(targetOutlineItemId) && candidate.outlineItemId === targetOutlineItemId;
+      const easierThanCurrent = currentQuestionDifficultyRank !== null
+        ? candidateDifficultyRank !== null && candidateDifficultyRank < currentQuestionDifficultyRank
+        : candidate.difficultyLevel === 'easy';
+
+      return {
+        candidate,
+        sameTopic,
+        easierThanCurrent,
+        difficultyRank: candidateDifficultyRank,
+        questionTypeRank: getQuestionTypeRank(candidate.questionType),
+      };
+    })
+    .filter(({ candidate, sameTopic, easierThanCurrent }) => {
+      if (targetOutlineItemId) {
+        return sameTopic && easierThanCurrent;
+      }
+
+      return easierThanCurrent || candidate.difficultyLevel === 'easy';
+    })
+    .sort((left, right) => {
+      if (Number(right.sameTopic) !== Number(left.sameTopic)) {
+        return Number(right.sameTopic) - Number(left.sameTopic);
+      }
+
+      if (Number(right.easierThanCurrent) !== Number(left.easierThanCurrent)) {
+        return Number(right.easierThanCurrent) - Number(left.easierThanCurrent);
+      }
+
+      if ((left.difficultyRank ?? Number.MAX_SAFE_INTEGER) !== (right.difficultyRank ?? Number.MAX_SAFE_INTEGER)) {
+        return (left.difficultyRank ?? Number.MAX_SAFE_INTEGER) - (right.difficultyRank ?? Number.MAX_SAFE_INTEGER);
+      }
+
+      if (left.questionTypeRank !== right.questionTypeRank) {
+        return left.questionTypeRank - right.questionTypeRank;
+      }
+
+      return (left.candidate.id || '').localeCompare(right.candidate.id || '');
+    });
+
+  if (rankedCandidates.length === 0) {
+    return null;
+  }
+
+  const selected = rankedCandidates[0].candidate;
+
+  return {
+    questionId: selected.id,
+    outlineItemId: selected.outlineItemId || targetOutlineItemId || null,
+    difficultyLevel: selected.difficultyLevel,
+    questionType: selected.questionType,
+    prompt: selected.prompt,
+  };
+}
+
 function buildSupportMessage({ recommendedAction, reasonCode }) {
   switch (recommendedAction) {
     case 'fallback_easier_question':
@@ -279,6 +401,15 @@ function chooseRecoveryAction(struggleSignals = {}) {
 function getRecoveryRecommendation(input = {}) {
   const struggleSignals = detectStruggleSignals(input);
   const recommendedAction = chooseRecoveryAction(struggleSignals);
+  const easierQuestionFallback = recommendedAction === 'fallback_easier_question'
+    ? selectEasierFallbackQuestion({
+      struggleSignals,
+      session: input.session,
+      recentAttempts: input.recentAttempts,
+      questionCandidates: input.questionCandidates,
+      currentQuestion: input.currentQuestion,
+    })
+    : null;
 
   return {
     isStruggling: struggleSignals.isStruggling,
@@ -291,6 +422,7 @@ function getRecoveryRecommendation(input = {}) {
       recommendedAction,
       reasonCode: struggleSignals.reasonCode,
     }),
+    easierQuestionFallback,
     signals: struggleSignals.signals,
   };
 }
@@ -301,5 +433,6 @@ module.exports = {
   MIN_CONFIDENCE_DROP,
   detectStruggleSignals,
   chooseRecoveryAction,
+  selectEasierFallbackQuestion,
   getRecoveryRecommendation,
 };
