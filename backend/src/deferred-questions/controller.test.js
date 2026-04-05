@@ -1,8 +1,9 @@
 jest.mock('./repository', () => ({
   createForProjectSessionAndUser: jest.fn(),
+  listForProjectSessionAndUser: jest.fn(),
 }));
 
-const { createForProjectSessionAndUser } = require('./repository');
+const { createForProjectSessionAndUser, listForProjectSessionAndUser } = require('./repository');
 const controller = require('./controller');
 
 function createRes() {
@@ -15,6 +16,155 @@ function createRes() {
 describe('deferred questions controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('lists deferred questions for a project/session and returns API-facing payload', async () => {
+    listForProjectSessionAndUser.mockResolvedValue([
+      {
+        id: 'dq-2',
+        project_id: 'project-1',
+        session_id: 'session-1',
+        outline_item_id: 'topic-2',
+        question_text: ' Could we compare this with the previous chapter? ',
+        defer_reason: ' Finish the current lesson first ',
+        status: 'deferred',
+        brief_response: null,
+        created_at: '2026-04-05T08:10:00.000Z',
+        updated_at: '2026-04-05T08:10:00.000Z',
+        resolved_at: null,
+      },
+      {
+        id: 'dq-1',
+        project_id: 'project-1',
+        session_id: null,
+        outline_item_id: null,
+        question_text: ' Why does this formula work? ',
+        defer_reason: ' Too deep for the current lesson ',
+        status: 'revisited',
+        brief_response: ' We will cover the intuition in the recap block. ',
+        created_at: '2026-04-05T08:00:00.000Z',
+        updated_at: '2026-04-05T08:20:00.000Z',
+        resolved_at: null,
+      },
+    ]);
+
+    const req = {
+      params: { projectId: ' project-1 ' },
+      query: { sessionId: ' session-1 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listDeferredQuestions(req, res, next);
+
+    expect(listForProjectSessionAndUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      sessionId: 'session-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        deferredQuestions: [
+          {
+            id: 'dq-2',
+            projectId: 'project-1',
+            sessionId: 'session-1',
+            outlineItemId: 'topic-2',
+            questionText: 'Could we compare this with the previous chapter?',
+            deferReason: 'Finish the current lesson first',
+            status: 'deferred',
+            briefResponse: null,
+            createdAt: '2026-04-05T08:10:00.000Z',
+            updatedAt: '2026-04-05T08:10:00.000Z',
+            resolvedAt: null,
+          },
+          {
+            id: 'dq-1',
+            projectId: 'project-1',
+            sessionId: null,
+            outlineItemId: null,
+            questionText: 'Why does this formula work?',
+            deferReason: 'Too deep for the current lesson',
+            status: 'revisited',
+            briefResponse: 'We will cover the intuition in the recap block.',
+            createdAt: '2026-04-05T08:00:00.000Z',
+            updatedAt: '2026-04-05T08:20:00.000Z',
+            resolvedAt: null,
+          },
+        ],
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns an empty deferred-question list when the owned scope has no parked questions', async () => {
+    listForProjectSessionAndUser.mockResolvedValue([]);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      query: {},
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listDeferredQuestions(req, res, next);
+
+    expect(listForProjectSessionAndUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      sessionId: undefined,
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        deferredQuestions: [],
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('passes the authenticated user scope when listing so unauthorized access is blocked upstream', async () => {
+    listForProjectSessionAndUser.mockResolvedValue([]);
+
+    const req = {
+      params: { projectId: 'project-locked' },
+      query: { session_id: 'session-1' },
+      user: { id: 'user-42' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listDeferredQuestions(req, res, next);
+
+    expect(listForProjectSessionAndUser).toHaveBeenCalledWith({
+      projectId: 'project-locked',
+      sessionId: 'session-1',
+      userId: 'user-42',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects empty optional sessionId when provided for list requests', async () => {
+    const req = {
+      params: { projectId: 'project-1' },
+      query: { sessionId: '   ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listDeferredQuestions(req, res, next);
+
+    expect(listForProjectSessionAndUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'sessionId must be a non-empty string when provided' });
+    expect(next).not.toHaveBeenCalled();
   });
 
   test('creates a project/session-scoped deferred question and returns API-facing payload', async () => {

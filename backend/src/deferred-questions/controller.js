@@ -1,4 +1,4 @@
-const { createForProjectSessionAndUser } = require('./repository');
+const { createForProjectSessionAndUser, listForProjectSessionAndUser } = require('./repository');
 
 function normalizeString(value) {
   if (value === undefined || value === null) {
@@ -28,6 +28,41 @@ function mapDeferredQuestionToApi(deferredQuestion) {
     resolvedAt: deferredQuestion.resolved_at,
   };
 }
+
+exports.listDeferredQuestions = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const sessionIdInput = req.query?.sessionId ?? req.query?.session_id;
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    let sessionId;
+    if (sessionIdInput !== undefined) {
+      sessionId = normalizeString(sessionIdInput);
+
+      if (!sessionId) {
+        return res.status(400).json({ message: 'sessionId must be a non-empty string when provided' });
+      }
+    }
+
+    const deferredQuestions = await listForProjectSessionAndUser({
+      projectId,
+      sessionId,
+      userId: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        deferredQuestions: deferredQuestions.map(mapDeferredQuestionToApi),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 exports.createDeferredQuestion = async (req, res, next) => {
   try {
