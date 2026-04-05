@@ -1,3 +1,5 @@
+const db = require('../../config/database');
+
 const DEFERRED_QUESTION_COLUMNS = [
   'id',
   'project_id',
@@ -36,9 +38,73 @@ function mapDeferredQuestionRow(row) {
   };
 }
 
+async function createForProjectSessionAndUser({
+  projectId,
+  sessionId = null,
+  userId,
+  outlineItemId = null,
+  questionText,
+  deferReason,
+  status = 'deferred',
+  briefResponse = null,
+  resolvedAt = null,
+}) {
+  const result = await db.query(
+    `WITH owned_session AS (
+       SELECT s.id, s.project_id
+       FROM learning_sessions s
+       INNER JOIN learning_projects p ON p.id = s.project_id
+       WHERE s.id = $2 AND s.project_id = $1 AND p.user_id = $3
+       LIMIT 1
+     )
+     INSERT INTO deferred_questions (
+       project_id,
+       session_id,
+       outline_item_id,
+       question_text,
+       defer_reason,
+       status,
+       brief_response,
+       resolved_at
+     )
+     SELECT
+       $1,
+       CASE WHEN $2::uuid IS NULL THEN NULL ELSE os.id END,
+       $4,
+       $5,
+       $6,
+       $7,
+       $8,
+       $9
+     FROM (SELECT 1) seed
+     LEFT JOIN owned_session os ON TRUE
+     WHERE EXISTS (
+       SELECT 1
+       FROM learning_projects p
+       WHERE p.id = $1 AND p.user_id = $3
+     )
+       AND ($2::uuid IS NULL OR os.id IS NOT NULL)
+     RETURNING ${DEFERRED_QUESTION_SELECT}`,
+    [
+      projectId,
+      sessionId,
+      userId,
+      outlineItemId,
+      questionText,
+      deferReason,
+      status,
+      briefResponse,
+      resolvedAt,
+    ]
+  );
+
+  return mapDeferredQuestionRow(result.rows[0]);
+}
+
 module.exports = {
   DEFERRED_QUESTION_COLUMNS,
   DEFERRED_QUESTION_SELECT,
   DEFERRED_QUESTION_SELECT_WITH_ALIAS,
   mapDeferredQuestionRow,
+  createForProjectSessionAndUser,
 };

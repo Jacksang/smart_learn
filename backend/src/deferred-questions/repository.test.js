@@ -1,11 +1,21 @@
+jest.mock('../../config/database', () => ({
+  query: jest.fn(),
+}));
+
+const db = require('../../config/database');
 const {
   DEFERRED_QUESTION_COLUMNS,
   DEFERRED_QUESTION_SELECT,
   DEFERRED_QUESTION_SELECT_WITH_ALIAS,
   mapDeferredQuestionRow,
+  createForProjectSessionAndUser,
 } = require('./repository');
 
 describe('deferred questions repository scaffold', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   test('maps a deferred question row to the repository shape', () => {
     const row = {
       id: 'deferred-1',
@@ -46,5 +56,66 @@ describe('deferred questions repository scaffold', () => {
     expect(DEFERRED_QUESTION_SELECT_WITH_ALIAS('dq')).toBe(
       'dq.id, dq.project_id, dq.session_id, dq.outline_item_id, dq.question_text, dq.defer_reason, dq.status, dq.brief_response, dq.created_at, dq.updated_at, dq.resolved_at'
     );
+  });
+
+  test('creates one deferred question for an owned project/session and maps the inserted row', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'deferred-2',
+          project_id: 'project-1',
+          session_id: 'session-1',
+          outline_item_id: 'item-9',
+          question_text: 'Can we come back to eigenvectors later?',
+          defer_reason: 'off_topic',
+          status: 'deferred',
+          brief_response: 'Yes, after this section.',
+          created_at: '2026-04-05T08:00:00.000Z',
+          updated_at: '2026-04-05T08:00:00.000Z',
+          resolved_at: null,
+        },
+      ],
+    });
+
+    const deferredQuestion = await createForProjectSessionAndUser({
+      projectId: 'project-1',
+      sessionId: 'session-1',
+      userId: 'user-1',
+      outlineItemId: 'item-9',
+      questionText: 'Can we come back to eigenvectors later?',
+      deferReason: 'off_topic',
+      briefResponse: 'Yes, after this section.',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO deferred_questions'),
+      [
+        'project-1',
+        'session-1',
+        'user-1',
+        'item-9',
+        'Can we come back to eigenvectors later?',
+        'off_topic',
+        'deferred',
+        'Yes, after this section.',
+        null,
+      ]
+    );
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN learning_projects p ON p.id = s.project_id');
+    expect(db.query.mock.calls[0][0]).toContain('WHERE s.id = $2 AND s.project_id = $1 AND p.user_id = $3');
+    expect(db.query.mock.calls[0][0]).toContain('($2::uuid IS NULL OR os.id IS NOT NULL)');
+    expect(deferredQuestion).toEqual({
+      id: 'deferred-2',
+      project_id: 'project-1',
+      session_id: 'session-1',
+      outline_item_id: 'item-9',
+      question_text: 'Can we come back to eigenvectors later?',
+      defer_reason: 'off_topic',
+      status: 'deferred',
+      brief_response: 'Yes, after this section.',
+      created_at: '2026-04-05T08:00:00.000Z',
+      updated_at: '2026-04-05T08:00:00.000Z',
+      resolved_at: null,
+    });
   });
 });
