@@ -128,6 +128,7 @@ Rules for use:
 - [ ] Add end-of-session summary structure
 - [ ] Save artifact: service logic + tests
 - [ ] Commit and push
+  - Planning artifact (2026-04-05): Function-level breakdown created in `D2.3_REINFORCE_AND_RECOVERY_FUNCTION_BREAKDOWN.md`.
 
 ---
 
