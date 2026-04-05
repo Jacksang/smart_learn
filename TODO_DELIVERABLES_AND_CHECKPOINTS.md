@@ -82,12 +82,12 @@ Rules for use:
   - Closeout note (2026-04-04): D1.3.A-F are complete in `D1.3_OUTLINE_GENERATION_FLOW_SUBCHECKLIST.md`, including schema split/migration verification, outline creation + refresh + retrieval endpoints, focused integration coverage in `backend/src/outline/flow.integration.test.js`, and `docs/OUTLINE_GENERATION_FLOW.md`. Related commits were pushed through `b14e8a7`.
 
 ### D1.4 Question generation flow
-- [ ] Implement question generation from outline
-- [ ] Default to 5-question batch size
-- [ ] Support additional batch generation
-- [ ] Save artifact: working routes + tests
+- [x] Implement question generation from outline
+- [x] Default to 5-question batch size
+- [x] Support additional batch generation
+- [x] Save artifact: working routes + tests
 - [ ] Commit and push
-  - Planning note (2026-04-04): Execution broken into `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`, starting with schema/runtime realignment of the existing `backend/src/questions/*` module before adding project-scoped generation endpoints.
+  - Closeout note (2026-04-05): D1.4.A-F are complete in `D1.4_QUESTION_GENERATION_FLOW_SUBCHECKLIST.md`, including project-scoped generation/listing routes, focused unit coverage, end-to-end flow verification in `backend/src/questions/flow.integration.test.js`, and `docs/QUESTION_GENERATION_FLOW.md`.
 
 ### D1.5 Answers and progress
 - [ ] Implement answer submission
