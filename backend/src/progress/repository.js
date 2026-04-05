@@ -181,6 +181,37 @@ function mapProgressSnapshotRow(row) {
   };
 }
 
+async function findLatestProjectSnapshotForUser({ projectId, userId }) {
+  const result = await db.query(
+    `WITH owned_project AS (
+       SELECT p.id
+       FROM learning_projects p
+       WHERE p.id = $1 AND p.user_id = $2
+       LIMIT 1
+     )
+     SELECT
+       ps.id,
+       ps.project_id,
+       ps.outline_item_id,
+       ps.snapshot_type,
+       ps.completion_percent,
+       ps.mastery_score,
+       ps.progress_state,
+       ps.weak_areas,
+       ps.strength_areas,
+       ps.summary_text,
+       ps.created_at
+     FROM owned_project op
+     INNER JOIN progress_snapshots ps ON ps.project_id = op.id
+     WHERE ps.outline_item_id IS NULL
+     ORDER BY ps.created_at DESC, ps.id DESC
+     LIMIT 1`,
+    [projectId, userId]
+  );
+
+  return mapProgressSnapshotRow(result.rows[0]);
+}
+
 async function createProjectSnapshot({ projectId, userId, snapshot }) {
   const result = await db.query(
     `WITH owned_project AS (
@@ -323,6 +354,7 @@ module.exports = {
   mapProgressSnapshotRow,
   getProjectProgressAggregate,
   listTopicProgressAggregates,
+  findLatestProjectSnapshotForUser,
   createProjectSnapshot,
   createTopicSnapshots,
 };
