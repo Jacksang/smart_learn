@@ -4,6 +4,7 @@ const {
   createProjectSnapshot,
   createTopicSnapshots,
   findLatestProjectSnapshotForUser,
+  findLatestTopicSnapshotForUser,
 } = require('./repository');
 const {
   buildTopicProgressSnapshots,
@@ -52,6 +53,36 @@ exports.getProjectProgress = async (req, res, next) => {
 
     return res.status(200).json({
       projectId,
+      progressSnapshot: mapPersistedSnapshotToApi(progressSnapshot),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getTopicProgress = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const itemId = normalizeString(req.params.itemId);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    if (!itemId) {
+      return res.status(400).json({ message: 'itemId is required' });
+    }
+
+    const userId = req.user.id;
+    const progressSnapshot = await findLatestTopicSnapshotForUser({
+      projectId,
+      outlineItemId: itemId,
+      userId,
+    });
+
+    return res.status(200).json({
+      projectId,
+      itemId,
       progressSnapshot: mapPersistedSnapshotToApi(progressSnapshot),
     });
   } catch (error) {

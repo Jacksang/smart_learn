@@ -4,6 +4,7 @@ jest.mock('./repository', () => ({
   createProjectSnapshot: jest.fn(),
   createTopicSnapshots: jest.fn(),
   findLatestProjectSnapshotForUser: jest.fn(),
+  findLatestTopicSnapshotForUser: jest.fn(),
 }));
 
 jest.mock('./service', () => ({
@@ -17,6 +18,7 @@ const {
   createProjectSnapshot,
   createTopicSnapshots,
   findLatestProjectSnapshotForUser,
+  findLatestTopicSnapshotForUser,
 } = require('./repository');
 const {
   buildTopicProgressSnapshots,
@@ -151,6 +153,116 @@ describe('progress controller', () => {
     expect(findLatestProjectSnapshotForUser).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns the latest topic progress snapshot payload for an owned project topic', async () => {
+    const persistedTopicSnapshot = {
+      id: 'snapshot-topic-1',
+      project_id: 'project-1',
+      outline_item_id: 'item-1',
+      snapshot_type: 'topic',
+      completion_percent: 75,
+      mastery_score: 88.5,
+      progress_state: 'strong',
+      weak_areas: [],
+      strength_areas: [],
+      summary_text: 'Topic progress is strong with improving mastery.',
+      created_at: '2026-04-05T04:10:00.000Z',
+    };
+
+    findLatestTopicSnapshotForUser.mockResolvedValue(persistedTopicSnapshot);
+
+    const req = {
+      params: { projectId: ' project-1 ', itemId: ' item-1 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getTopicProgress(req, res, next);
+
+    expect(findLatestTopicSnapshotForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      outlineItemId: 'item-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      itemId: 'item-1',
+      progressSnapshot: {
+        id: 'snapshot-topic-1',
+        projectId: 'project-1',
+        outlineItemId: 'item-1',
+        snapshotType: 'topic',
+        completionPercent: 75,
+        masteryScore: 88.5,
+        progressState: 'strong',
+        weakAreas: [],
+        strengthAreas: [],
+        summaryText: 'Topic progress is strong with improving mastery.',
+        createdAt: '2026-04-05T04:10:00.000Z',
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns a clean null topic progress snapshot when no persisted topic snapshot exists yet', async () => {
+    findLatestTopicSnapshotForUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1', itemId: 'item-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getTopicProgress(req, res, next);
+
+    expect(findLatestTopicSnapshotForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      outlineItemId: 'item-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      itemId: 'item-1',
+      progressSnapshot: null,
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing projectId for topic progress retrieval before repository access', async () => {
+    const req = {
+      params: { projectId: '   ', itemId: 'item-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getTopicProgress(req, res, next);
+
+    expect(findLatestTopicSnapshotForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing itemId for topic progress retrieval before repository access', async () => {
+    const req = {
+      params: { projectId: 'project-1', itemId: '   ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getTopicProgress(req, res, next);
+
+    expect(findLatestTopicSnapshotForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'itemId is required' });
     expect(next).not.toHaveBeenCalled();
   });
 
