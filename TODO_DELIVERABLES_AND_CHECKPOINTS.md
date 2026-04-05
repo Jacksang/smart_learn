@@ -114,12 +114,13 @@ Rules for use:
   - Closeout note (2026-04-05): D2.1.1-D2.1.7 are complete, including the PostgreSQL-backed `backend/src/sessions/` repository/service/controller/router module, project-scoped routes for `POST /api/projects/:projectId/sessions`, `GET /api/projects/:projectId/sessions/current`, and `PATCH /api/projects/:projectId/sessions/:sessionId`, plus focused repository/service/controller/router test coverage proving the create/update/get session flows are wired and reachable.
 
 ### D2.2 Deferred questions / parking lot
-- [ ] Implement deferred question storage
-- [ ] Link question to lesson step/topic
-- [ ] Add revisit flow
-- [ ] Save artifact: model + routes/tests
+- [x] Implement deferred question storage
+- [x] Link question to lesson step/topic
+- [x] Add revisit flow
+- [x] Save artifact: model + routes/tests
 - [ ] Commit and push
   - Planning artifact (2026-04-05): Function-level breakdown created in `D2.2_DEFERRED_QUESTIONS_FUNCTION_BREAKDOWN.md`.
+  - Closeout note (2026-04-05): D2.2.1-D2.2.7 are complete, including the PostgreSQL-backed `backend/src/deferred-questions/` repository/service/controller/router module, project-scoped routes for `POST /api/projects/:projectId/deferred-questions`, `GET /api/projects/:projectId/deferred-questions`, and `PATCH /api/projects/:projectId/deferred-questions/:deferredQuestionId`, focused Jest coverage across repository/service/controller behavior, and live route reachability verification via `401` responses on the mounted endpoints without auth.
 
 ### D2.3 Reinforce and recovery flow
 - [ ] Implement confidence recovery triggers
@@ -173,4 +174,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D2.2 — Deferred questions / parking lot
+- [ ] Start D2.3 — Reinforce and recovery flow
