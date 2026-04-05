@@ -48,6 +48,7 @@ describe('answers repository', () => {
       expect.stringContaining('FROM answer_attempts aa'),
       ['project-1', 'question-1', 'user-1']
     );
+    expect(db.query.mock.calls[0][0]).toContain('ORDER BY aa.answered_at DESC, aa.created_at DESC, aa.attempt_no DESC');
     expect(answers).toEqual([
       expect.objectContaining({
         id: 'attempt-2',
@@ -55,6 +56,18 @@ describe('answers repository', () => {
         question: expect.objectContaining({ prompt: 'Pick A' }),
       }),
     ]);
+  });
+
+  test('returns an empty list when no question answer attempts match the project/user scope', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const answers = await listByQuestionForProjectAndUser({
+      projectId: 'project-1',
+      questionId: 'question-1',
+      userId: 'user-1',
+    });
+
+    expect(answers).toEqual([]);
   });
 
   test('lists recent project answer attempts with explicit limit', async () => {

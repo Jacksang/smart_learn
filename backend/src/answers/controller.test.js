@@ -83,6 +83,35 @@ describe('answers controller', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  test('returns an empty question answer history when the scoped question has no attempts yet', async () => {
+    findByIdForProjectAndUser.mockResolvedValue({ id: 'question-1', project_id: 'project-1' });
+    listByQuestionForProjectAndUser.mockResolvedValue([]);
+
+    const req = {
+      params: { projectId: 'project-1', questionId: 'question-1' },
+      user: { id: 'user-1' },
+      query: {},
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listQuestionAnswers(req, res, next);
+
+    expect(findByIdForProjectAndUser).toHaveBeenCalledWith('question-1', 'project-1', 'user-1');
+    expect(listByQuestionForProjectAndUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      questionId: 'question-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      questionId: 'question-1',
+      answers: [],
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
   test('lists recent project answer history with normalized positive limit', async () => {
     listRecentByProjectForUser.mockResolvedValue([{ id: 'attempt-2' }]);
 
