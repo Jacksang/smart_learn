@@ -106,11 +106,12 @@ Rules for use:
 ## Phase 2 — Tutor Flow and Learning Experience
 
 ### D2.1 Learning sessions
-- [ ] Implement learning session model
-- [ ] Track current mode and current topic
-- [ ] Save artifact: session model + routes/tests
+- [x] Implement learning session model
+- [x] Track current mode and current topic
+- [x] Save artifact: session model + routes/tests
 - [ ] Commit and push
   - Planning artifact (2026-04-05): Function-level breakdown created in `D2.1_LEARNING_SESSIONS_FUNCTION_BREAKDOWN.md`.
+  - Closeout note (2026-04-05): D2.1.1-D2.1.7 are complete, including the PostgreSQL-backed `backend/src/sessions/` repository/service/controller/router module, project-scoped routes for `POST /api/projects/:projectId/sessions`, `GET /api/projects/:projectId/sessions/current`, and `PATCH /api/projects/:projectId/sessions/:sessionId`, plus focused repository/service/controller/router test coverage proving the create/update/get session flows are wired and reachable.
 
 ### D2.2 Deferred questions / parking lot
 - [ ] Implement deferred question storage
@@ -171,4 +172,4 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
-- [ ] Start D2.1 — Learning sessions
+- [ ] Start D2.2 — Deferred questions / parking lot

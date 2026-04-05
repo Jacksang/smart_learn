@@ -10,6 +10,7 @@ const {
   updateSessionState,
 } = require('./repository');
 const controller = require('./controller');
+const router = require('./router');
 
 function createRes() {
   return {
@@ -21,6 +22,39 @@ function createRes() {
 describe('sessions controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('registers the protected project-scoped create session route', () => {
+    const createSessionLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/sessions'
+    );
+
+    expect(createSessionLayer).toBeDefined();
+    expect(createSessionLayer.route.methods.post).toBe(true);
+    expect(createSessionLayer.route.stack).toHaveLength(2);
+    expect(createSessionLayer.route.stack[1].handle).toBe(controller.createProjectSession);
+  });
+
+  test('registers the protected current project session retrieval route', () => {
+    const currentSessionLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/sessions/current'
+    );
+
+    expect(currentSessionLayer).toBeDefined();
+    expect(currentSessionLayer.route.methods.get).toBe(true);
+    expect(currentSessionLayer.route.stack).toHaveLength(2);
+    expect(currentSessionLayer.route.stack[1].handle).toBe(controller.getCurrentProjectSession);
+  });
+
+  test('registers the protected project-scoped update session route', () => {
+    const updateSessionLayer = router.stack.find(
+      (layer) => layer.route && layer.route.path === '/projects/:projectId/sessions/:sessionId'
+    );
+
+    expect(updateSessionLayer).toBeDefined();
+    expect(updateSessionLayer.route.methods.patch).toBe(true);
+    expect(updateSessionLayer.route.stack).toHaveLength(2);
+    expect(updateSessionLayer.route.stack[1].handle).toBe(controller.updateProjectSessionState);
   });
 
   test('creates a new project-scoped learning session and returns API-facing payload', async () => {

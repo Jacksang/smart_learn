@@ -15,6 +15,7 @@ const userRoutes = require('../src/users/router');
 const outlineRoutes = require('../src/outline/router');
 const answerRoutes = require('../src/answers/router');
 const progressRoutes = require('../src/progress/router');
+const sessionRoutes = require('../src/sessions/router');
 const projectRoutes = require('../src/projects/router');
 const materialRoutes = require('../src/materials/router');
 
@@ -23,6 +24,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/outline', outlineRoutes);
 app.use('/api', answerRoutes);
 app.use('/api', progressRoutes);
+app.use('/api', sessionRoutes);
 app.use('/api/answers', answerRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/materials', materialRoutes);
