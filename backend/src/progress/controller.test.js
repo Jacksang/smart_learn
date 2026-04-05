@@ -3,6 +3,7 @@ jest.mock('./repository', () => ({
   listTopicProgressAggregates: jest.fn(),
   createProjectSnapshot: jest.fn(),
   createTopicSnapshots: jest.fn(),
+  findLatestProjectSnapshotForUser: jest.fn(),
 }));
 
 jest.mock('./service', () => ({
@@ -15,6 +16,7 @@ const {
   listTopicProgressAggregates,
   createProjectSnapshot,
   createTopicSnapshots,
+  findLatestProjectSnapshotForUser,
 } = require('./repository');
 const {
   buildTopicProgressSnapshots,
@@ -44,6 +46,112 @@ describe('progress controller', () => {
     expect(refreshLayer.route.methods.post).toBe(true);
     expect(refreshLayer.route.stack).toHaveLength(2);
     expect(refreshLayer.route.stack[1].handle).toBe(controller.refreshProjectProgress);
+  });
+
+  test('returns the latest project progress snapshot payload for an owned project', async () => {
+    const persistedProjectSnapshot = {
+      id: 'snapshot-project-1',
+      project_id: 'project-1',
+      outline_item_id: null,
+      snapshot_type: 'project',
+      completion_percent: 62.5,
+      mastery_score: 84.75,
+      progress_state: 'strong',
+      weak_areas: [],
+      strength_areas: [
+        {
+          outlineItemId: 'item-1',
+          title: 'Addition',
+          masteryScore: 91,
+          completionPercent: 100,
+          progressState: 'mastered',
+        },
+      ],
+      summary_text: 'Project is strong with 62.5% completion and 84.75% mastery. Strength areas: Addition.',
+      created_at: '2026-04-05T03:10:00.000Z',
+    };
+
+    findLatestProjectSnapshotForUser.mockResolvedValue(persistedProjectSnapshot);
+
+    const req = {
+      params: { projectId: ' project-1 ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectProgress(req, res, next);
+
+    expect(findLatestProjectSnapshotForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      progressSnapshot: {
+        id: 'snapshot-project-1',
+        projectId: 'project-1',
+        outlineItemId: null,
+        snapshotType: 'project',
+        completionPercent: 62.5,
+        masteryScore: 84.75,
+        progressState: 'strong',
+        weakAreas: [],
+        strengthAreas: [
+          {
+            outlineItemId: 'item-1',
+            title: 'Addition',
+            masteryScore: 91,
+            completionPercent: 100,
+            progressState: 'mastered',
+          },
+        ],
+        summaryText: 'Project is strong with 62.5% completion and 84.75% mastery. Strength areas: Addition.',
+        createdAt: '2026-04-05T03:10:00.000Z',
+      },
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('returns a clean null progress snapshot when no persisted project snapshot exists yet', async () => {
+    findLatestProjectSnapshotForUser.mockResolvedValue(null);
+
+    const req = {
+      params: { projectId: 'project-1' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectProgress(req, res, next);
+
+    expect(findLatestProjectSnapshotForUser).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      projectId: 'project-1',
+      progressSnapshot: null,
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects missing projectId for project progress retrieval before repository access', async () => {
+    const req = {
+      params: { projectId: '   ' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.getProjectProgress(req, res, next);
+
+    expect(findLatestProjectSnapshotForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'projectId is required' });
+    expect(next).not.toHaveBeenCalled();
   });
 
   test('refreshes project progress, persists project/topic snapshots, and returns API-facing payload', async () => {
