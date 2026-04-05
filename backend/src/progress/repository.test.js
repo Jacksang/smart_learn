@@ -7,6 +7,7 @@ const {
   getProjectProgressAggregate,
   listTopicProgressAggregates,
   findLatestProjectSnapshotForUser,
+  findLatestTopicSnapshotForUser,
   createProjectSnapshot,
   createTopicSnapshots,
 } = require('./repository');
@@ -246,6 +247,81 @@ describe('progress repository', () => {
     expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining('WHERE p.id = $1 AND p.user_id = $2'),
       ['project-404', 'user-9']
+    );
+    expect(snapshot).toBeNull();
+  });
+
+  test('returns the latest owned topic-level snapshot for the requested outline item', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'snapshot-topic-latest',
+          project_id: 'project-1',
+          outline_item_id: 'item-2',
+          snapshot_type: 'topic_refresh',
+          completion_percent: '55',
+          mastery_score: '61.75',
+          progress_state: 'in_progress',
+          weak_areas: [{ outline_item_id: 'item-2', title: 'Fractions' }],
+          strength_areas: [{ outline_item_id: 'item-2', title: 'Visualization' }],
+          summary_text: 'Latest topic snapshot summary.',
+          created_at: '2026-04-05T05:10:00.000Z',
+        },
+      ],
+    });
+
+    const snapshot = await findLatestTopicSnapshotForUser({
+      projectId: 'project-1',
+      outlineItemId: 'item-2',
+      userId: 'user-1',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE p.id = $1 AND p.user_id = $3'),
+      ['project-1', 'item-2', 'user-1']
+    );
+    expect(db.query.mock.calls[0][0]).toContain('INNER JOIN progress_snapshots ps ON ps.project_id = op.id');
+    expect(db.query.mock.calls[0][0]).toContain('WHERE ps.outline_item_id = $2');
+    expect(db.query.mock.calls[0][0]).toContain('ORDER BY ps.created_at DESC, ps.id DESC');
+    expect(snapshot).toEqual({
+      id: 'snapshot-topic-latest',
+      project_id: 'project-1',
+      outline_item_id: 'item-2',
+      snapshot_type: 'topic_refresh',
+      completion_percent: 55,
+      mastery_score: 61.75,
+      progress_state: 'in_progress',
+      weak_areas: [{ outline_item_id: 'item-2', title: 'Fractions' }],
+      strength_areas: [{ outline_item_id: 'item-2', title: 'Visualization' }],
+      summary_text: 'Latest topic snapshot summary.',
+      created_at: '2026-04-05T05:10:00.000Z',
+    });
+  });
+
+  test('returns null when no owned topic-level snapshot exists yet', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const snapshot = await findLatestTopicSnapshotForUser({
+      projectId: 'project-1',
+      outlineItemId: 'item-2',
+      userId: 'user-1',
+    });
+
+    expect(snapshot).toBeNull();
+  });
+
+  test('blocks latest topic snapshot lookup outside user ownership scope', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const snapshot = await findLatestTopicSnapshotForUser({
+      projectId: 'project-404',
+      outlineItemId: 'item-2',
+      userId: 'user-9',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE p.id = $1 AND p.user_id = $3'),
+      ['project-404', 'item-2', 'user-9']
     );
     expect(snapshot).toBeNull();
   });
