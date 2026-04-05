@@ -31,13 +31,13 @@ describe('questions controller', () => {
     jest.clearAllMocks();
   });
 
-  test('lists project questions with PostgreSQL-aligned filters', async () => {
+  test('lists project questions with normalized filters', async () => {
     const questions = [{ id: 'question-1', batch_no: 2, position_in_batch: 1 }];
     listByProjectForUser.mockResolvedValue(questions);
 
     const req = {
       params: { projectId: 'project-1' },
-      query: { outlineItemId: 'item-1', batchNo: '2', status: 'active' },
+      query: { outline_item_id: ' item-1 ', batch_no: '2', status: ' active ' },
       user: { id: 'user-1' },
     };
     const res = createRes();
@@ -49,11 +49,28 @@ describe('questions controller', () => {
       projectId: 'project-1',
       userId: 'user-1',
       outlineItemId: 'item-1',
-      batchNo: '2',
+      batchNo: 2,
       status: 'active',
     });
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ questions });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test('rejects invalid list filters before hitting the repository', async () => {
+    const req = {
+      params: { projectId: 'project-1' },
+      query: { batchNo: '0' },
+      user: { id: 'user-1' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await controller.listProjectQuestions(req, res, next);
+
+    expect(listByProjectForUser).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ message: 'batchNo must be a positive integer' });
     expect(next).not.toHaveBeenCalled();
   });
 

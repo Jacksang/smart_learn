@@ -19,6 +19,7 @@ const QUESTION_COLUMNS = [
 ];
 
 const QUESTION_SELECT = QUESTION_COLUMNS.join(', ');
+const QUESTION_SELECT_WITH_ALIAS = (alias) => QUESTION_COLUMNS.map((column) => `${alias}.${column}`).join(', ');
 
 function mapQuestionRow(row) {
   if (!row) {
@@ -48,27 +49,27 @@ async function listByProjectForUser({ projectId, userId, outlineItemId, batchNo,
   const clauses = ['q.project_id = $1', 'p.user_id = $2'];
   const params = [projectId, userId];
 
-  if (outlineItemId) {
+  if (outlineItemId !== undefined) {
     params.push(outlineItemId);
     clauses.push(`q.outline_item_id = $${params.length}`);
   }
 
-  if (batchNo) {
+  if (batchNo !== undefined) {
     params.push(batchNo);
     clauses.push(`q.batch_no = $${params.length}`);
   }
 
-  if (status) {
+  if (status !== undefined) {
     params.push(status);
     clauses.push(`q.status = $${params.length}`);
   }
 
   const result = await db.query(
-    `SELECT ${QUESTION_COLUMNS.map((column) => `q.${column}`).join(', ')}
+    `SELECT ${QUESTION_SELECT_WITH_ALIAS('q')}
      FROM questions q
      INNER JOIN learning_projects p ON p.id = q.project_id
      WHERE ${clauses.join(' AND ')}
-     ORDER BY q.batch_no ASC, q.position_in_batch ASC, q.created_at ASC`,
+     ORDER BY q.batch_no ASC, q.position_in_batch ASC, q.created_at ASC, q.id ASC`,
     params
   );
 
@@ -77,7 +78,7 @@ async function listByProjectForUser({ projectId, userId, outlineItemId, batchNo,
 
 async function findByIdForProjectAndUser(questionId, projectId, userId) {
   const result = await db.query(
-    `SELECT ${QUESTION_COLUMNS.map((column) => `q.${column}`).join(', ')}
+    `SELECT ${QUESTION_SELECT_WITH_ALIAS('q')}
      FROM questions q
      INNER JOIN learning_projects p ON p.id = q.project_id
      WHERE q.id = $1 AND q.project_id = $2 AND p.user_id = $3
