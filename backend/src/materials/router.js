@@ -6,11 +6,13 @@ const {
   createBaseKnowledgeMaterial,
   updateMaterial,
 } = require('./controller');
+const ingestionRouter = require('../ingestion/router');
 
 const projectScopedRouter = express.Router({ mergeParams: true });
 const topLevelRouter = express.Router();
 
 projectScopedRouter.get('/', listProjectMaterials);
+projectScopedRouter.use('/', ingestionRouter);
 projectScopedRouter.post('/', createProjectMaterial);
 projectScopedRouter.post('/base-knowledge', createBaseKnowledgeMaterial);
 
