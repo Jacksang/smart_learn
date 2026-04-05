@@ -243,6 +243,21 @@ async function findLatestTopicSnapshotForUser({ projectId, outlineItemId, userId
   return mapProgressSnapshotRow(result.rows[0]);
 }
 
+async function findLatestWeakAreasForUser({ projectId, userId }) {
+  const snapshot = await findLatestProjectSnapshotForUser({ projectId, userId });
+
+  if (!snapshot) {
+    return null;
+  }
+
+  return {
+    project_id: snapshot.project_id,
+    weak_areas: snapshot.weak_areas ?? [],
+    summary_text: snapshot.summary_text ?? null,
+    created_at: snapshot.created_at,
+  };
+}
+
 async function createProjectSnapshot({ projectId, userId, snapshot }) {
   const result = await db.query(
     `WITH owned_project AS (
@@ -387,6 +402,7 @@ module.exports = {
   listTopicProgressAggregates,
   findLatestProjectSnapshotForUser,
   findLatestTopicSnapshotForUser,
+  findLatestWeakAreasForUser,
   createProjectSnapshot,
   createTopicSnapshots,
 };

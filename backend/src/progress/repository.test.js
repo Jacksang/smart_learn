@@ -8,6 +8,7 @@ const {
   listTopicProgressAggregates,
   findLatestProjectSnapshotForUser,
   findLatestTopicSnapshotForUser,
+  findLatestWeakAreasForUser,
   createProjectSnapshot,
   createTopicSnapshots,
 } = require('./repository');
@@ -324,6 +325,101 @@ describe('progress repository', () => {
       ['project-404', 'item-2', 'user-9']
     );
     expect(snapshot).toBeNull();
+  });
+
+  test('returns weak areas from the latest owned project-level snapshot', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'snapshot-project-latest',
+          project_id: 'project-1',
+          outline_item_id: null,
+          snapshot_type: 'project_refresh',
+          completion_percent: '87.5',
+          mastery_score: '91.25',
+          progress_state: 'strong',
+          weak_areas: [{ outline_item_id: 'item-3', title: 'Word Problems' }],
+          strength_areas: [{ outline_item_id: 'item-1', title: 'Addition' }],
+          summary_text: 'Latest snapshot summary.',
+          created_at: '2026-04-05T05:00:00.000Z',
+        },
+      ],
+    });
+
+    const weakAreaSummary = await findLatestWeakAreasForUser({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE p.id = $1 AND p.user_id = $2'),
+      ['project-1', 'user-1']
+    );
+    expect(db.query.mock.calls[0][0]).toContain('WHERE ps.outline_item_id IS NULL');
+    expect(weakAreaSummary).toEqual({
+      project_id: 'project-1',
+      weak_areas: [{ outline_item_id: 'item-3', title: 'Word Problems' }],
+      summary_text: 'Latest snapshot summary.',
+      created_at: '2026-04-05T05:00:00.000Z',
+    });
+  });
+
+  test('returns null when no owned project snapshot exists for weak-area lookup', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const weakAreaSummary = await findLatestWeakAreasForUser({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+
+    expect(weakAreaSummary).toBeNull();
+  });
+
+  test('returns an empty weak-area list when the latest owned snapshot stores null weak areas', async () => {
+    db.query.mockResolvedValue({
+      rows: [
+        {
+          id: 'snapshot-project-latest',
+          project_id: 'project-1',
+          outline_item_id: null,
+          snapshot_type: 'project_refresh',
+          completion_percent: '50',
+          mastery_score: '48',
+          progress_state: 'in_progress',
+          weak_areas: null,
+          strength_areas: [],
+          summary_text: null,
+          created_at: '2026-04-05T05:05:00.000Z',
+        },
+      ],
+    });
+
+    const weakAreaSummary = await findLatestWeakAreasForUser({
+      projectId: 'project-1',
+      userId: 'user-1',
+    });
+
+    expect(weakAreaSummary).toEqual({
+      project_id: 'project-1',
+      weak_areas: [],
+      summary_text: null,
+      created_at: '2026-04-05T05:05:00.000Z',
+    });
+  });
+
+  test('blocks weak-area lookup outside user ownership scope', async () => {
+    db.query.mockResolvedValue({ rows: [] });
+
+    const weakAreaSummary = await findLatestWeakAreasForUser({
+      projectId: 'project-404',
+      userId: 'user-9',
+    });
+
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE p.id = $1 AND p.user_id = $2'),
+      ['project-404', 'user-9']
+    );
+    expect(weakAreaSummary).toBeNull();
   });
 
   test('creates one owned project-level progress snapshot row', async () => {
