@@ -141,6 +141,7 @@ Rules for use:
 - [ ] Implement OCR path for images
 - [ ] Save artifact: ingestion services + tests
 - [ ] Commit and push
+  - Planning artifact (2026-04-05): Function-level breakdown created in `D3.1_FILE_INGESTION_FUNCTION_BREAKDOWN.md`.
 
 ### D3.2 Future ingestion formats
 - [ ] Plan Excel/CSV ingestion
