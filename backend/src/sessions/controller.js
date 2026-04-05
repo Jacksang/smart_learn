@@ -1,5 +1,14 @@
-const { createForProjectAndUser, findActiveByProjectForUser } = require('./repository');
-const { mapSessionState, normalizeSessionMode, normalizeCurrentTopicId } = require('./service');
+const {
+  createForProjectAndUser,
+  findActiveByProjectForUser,
+  updateSessionState,
+} = require('./repository');
+const {
+  buildSessionStateUpdates,
+  mapSessionState,
+  normalizeSessionMode,
+  normalizeCurrentTopicId,
+} = require('./service');
 
 function normalizeString(value) {
   if (value === undefined || value === null) {
@@ -151,6 +160,66 @@ exports.createProjectSession = async (req, res, next) => {
       success: true,
       data: {
         session: mapSessionToApi(createdSession),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateProjectSessionState = async (req, res, next) => {
+  try {
+    const projectId = normalizeString(req.params.projectId);
+    const sessionId = normalizeString(req.params.sessionId);
+    const bodyProjectId = readBodyProjectId(req.body);
+    const bodySessionId = normalizeString(req.body?.sessionId ?? req.body?.session_id);
+
+    if (!projectId) {
+      return res.status(400).json({ message: 'projectId is required' });
+    }
+
+    if (!sessionId) {
+      return res.status(400).json({ message: 'sessionId is required' });
+    }
+
+    if (bodyProjectId && bodyProjectId !== projectId) {
+      return res.status(400).json({ message: 'projectId in body must match route projectId' });
+    }
+
+    if ((req.body?.sessionId !== undefined || req.body?.session_id !== undefined) && !bodySessionId) {
+      return res.status(400).json({ message: 'sessionId must be a non-empty string when provided' });
+    }
+
+    if (bodySessionId && bodySessionId !== sessionId) {
+      return res.status(400).json({ message: 'sessionId in body must match route sessionId' });
+    }
+
+    let updates;
+    try {
+      updates = buildSessionStateUpdates(req.body ?? {});
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'At least one of mode or currentOutlineItemId is required' });
+    }
+
+    const updatedSession = await updateSessionState({
+      sessionId,
+      projectId,
+      userId: req.user.id,
+      updates,
+    });
+
+    if (!updatedSession) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        session: mapSessionToApi(updatedSession),
       },
     });
   } catch (error) {
