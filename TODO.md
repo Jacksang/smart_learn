@@ -46,11 +46,11 @@
 - [ ] Add resilience/focus/effort milestone logic
 
 ## P2 — File & Multimedia Input
-- [ ] Support pasted text
-- [ ] Support PDF extraction
-- [ ] Support DOCX extraction
-- [ ] Support image OCR
-- [ ] Store extracted text with file metadata and weights
+- [x] Support pasted text
+- [x] Support PDF extraction
+- [x] Support DOCX extraction
+- [x] Support image OCR
+- [x] Store extracted text with file metadata and weights
 - [ ] Plan Excel/CSV support
 - [ ] Plan PPT/slides support
 
