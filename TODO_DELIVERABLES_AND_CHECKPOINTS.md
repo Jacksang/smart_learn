@@ -140,9 +140,9 @@ Rules for use:
 - [x] Implement text extraction pipeline
 - [x] Implement OCR path for images
 - [x] Save artifact: ingestion services + tests
-- [ ] Commit and push
+- [x] Commit and push
   - Planning artifact (2026-04-05): Function-level breakdown created in `D3.1_FILE_INGESTION_FUNCTION_BREAKDOWN.md`.
-  - Closeout note (2026-04-05): D3.1.1-D3.1.8 are complete, including `backend/src/ingestion/storage.js`, `pdf.js`, `docx.js`, `image-ocr.js`, `service.js`, `controller.js`, and `router.js`, plus the mounted `POST /api/projects/:projectId/materials/upload` entrypoint and focused verification in 6 Jest suites / 38 tests across the ingestion module.
+  - Closeout note (2026-04-06): D3.1.1-D3.1.8 are complete, including `backend/src/ingestion/storage.js`, `pdf.js`, `docx.js`, `image-ocr.js`, `service.js`, `controller.js`, and `router.js`, plus the mounted `POST /api/projects/:projectId/materials/upload` entrypoint and focused verification in 6 Jest suites / 38 tests across the ingestion module. All commits pushed through `b91d779`.
 
 ### D3.2 Future ingestion formats
 - [ ] Plan Excel/CSV ingestion
@@ -178,4 +178,5 @@ Rules for use:
 - Prefer milestone completion over broad status updates.
 
 ## Current recommended next checkpoint
+- [x] Complete D3.1 PDF / DOCX / image support
 - [ ] Start D3.2 — Future ingestion formats
