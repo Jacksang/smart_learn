@@ -51,8 +51,12 @@
 - [x] Support DOCX extraction
 - [x] Support image OCR
 - [x] Store extracted text with file metadata and weights
-- [ ] Plan Excel/CSV support
-- [ ] Plan PPT/slides support
+- [x] Plan Excel/CSV support (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
+- [x] Plan PPT/slides support (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
+- [x] Plan transcript ingestion (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
+- [ ] Implement Excel/CSV support
+- [ ] Implement PPT/slides support
+- [ ] Implement transcript/audio/video support
 
 ## P2 — Progress Intelligence
 - [ ] Weak-area detection

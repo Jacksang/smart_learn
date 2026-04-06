@@ -145,10 +145,16 @@ Rules for use:
   - Closeout note (2026-04-06): D3.1.1-D3.1.8 are complete, including `backend/src/ingestion/storage.js`, `pdf.js`, `docx.js`, `image-ocr.js`, `service.js`, `controller.js`, and `router.js`, plus the mounted `POST /api/projects/:projectId/materials/upload` entrypoint and focused verification in 6 Jest suites / 38 tests across the ingestion module. All commits pushed through `b91d779`.
 
 ### D3.2 Future ingestion formats
-- [ ] Plan Excel/CSV ingestion
-- [ ] Plan PPT/slides ingestion
-- [ ] Plan transcript ingestion
-- [ ] Save artifact: design doc updates
+- [x] Plan Excel/CSV ingestion
+- [x] Plan PPT/slides ingestion
+- [x] Plan transcript ingestion
+- [x] Save artifact: design doc updates
+  - Artifact: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`
+- [ ] Create function-level breakdown checklist
+- [ ] Implement CSV/Excel support
+- [ ] Implement PPT/slides support
+- [ ] Implement transcript/audio/video support
+- [ ] Save artifact: ingestion services + tests
 - [ ] Commit and push
 
 ---
