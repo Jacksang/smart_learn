@@ -1,0 +1,183 @@
+# D3.2 — Future Ingestion Formats (Function-Level Breakdown)
+
+## Purpose
+Function-level breakdown for implementing D3.2 future ingestion formats (CSV/Excel, PPT, transcripts).
+
+## Implementation Sequence
+1. **Phase 1: CSV/Excel support** (highest priority - structured data)
+2. **Phase 2: PPT/slides support** (educational content)
+3. **Phase 3: Transcript/audio/video support** (rich media)
+
+---
+
+## Phase 1: CSV/Excel Support
+
+### D3.2.1.1 — Add CSV parsing dependency
+**Business Logic:** Add `papaparse` library for CSV parsing
+**Scope:** `backend/package.json`
+**Expected Result:** Dependencies updated
+**Tests:** Verify `npm install` succeeds
+
+---
+
+### D3.2.1.2 — Add Excel parsing dependency
+**Business Logic:** Add `exceljs` library for Excel .xlsx/.xls parsing
+**Scope:** `backend/package.json`
+**Expected Result:** Dependencies updated
+**Tests:** Verify `npm install` succeeds
+
+---
+
+### D3.2.1.3 — Create CSV parser service
+**Business Logic:** Parse CSV files and extract text with metadata
+**Scope:** `backend/src/ingestion/csv.js`
+**Expected Result:** Service with `parse(filePath)` function returning `{ text, metadata }`
+**Tests:** Unit tests for basic CSV, multi-line cells, quoted values
+
+---
+
+### D3.2.1.4 — Create Excel parser service
+**Business Logic:** Parse Excel files, extract all sheets with metadata
+**Scope:** `backend/src/ingestion/excel.js`
+**Expected Result:** Service with `parse(filePath)` function returning `{ text, metadata }`
+**Tests:** Unit tests for single sheet, multi-sheet workbooks, formula vs value
+
+---
+
+### D3.2.1.5 — Update ingestion service to handle CSV/Excel
+**Business Logic:** Extend `backend/src/ingestion/service.js` to route CSV/Excel files
+**Scope:** `backend/src/ingestion/service.js`
+**Expected Result:** MIME type detection and routing to appropriate parser
+**Tests:** Integration tests with sample CSV/Excel files
+
+---
+
+### D3.2.1.6 — Add controller tests for CSV/Excel upload
+**Business Logic:** Verify upload endpoints handle CSV/Excel files
+**Scope:** `backend/src/ingestion/controller.test.js`
+**Expected Result:** Test coverage for CSV/Excel upload paths
+**Tests:** Jest tests for successful upload, error handling
+
+---
+
+### D3.2.1.7 — Update schema for CSV/Excel metadata
+**Business Logic:** Extend `source_materials` table to store format-specific metadata
+**Scope:** `backend/db/schema/002_csv_excel_metadata.sql`
+**Expected Result:** Migration adding `content_metadata` JSONB column
+**Tests:** Migration verification, schema validation
+
+---
+
+## Phase 2: PPT/Slides Support
+
+### D3.2.2.1 — Add PPT parsing dependency
+**Business Logic:** Add `pptx` library for PowerPoint parsing
+**Scope:** `backend/package.json`
+**Expected Result:** Dependencies updated
+**Tests:** Verify `npm install` succeeds
+
+---
+
+### D3.2.2.2 — Create PPT parser service
+**Business Logic:** Parse PPTX files, extract text and images from slides
+**Scope:** `backend/src/ingestion/pptx.js`
+**Expected Result:** Service with `parse(filePath)` function returning `{ text, images, metadata }`
+**Tests:** Unit tests for slide extraction, text formatting
+
+---
+
+### D3.2.2.3 — Update ingestion service to handle PPTX
+**Business Logic:** Extend `backend/src/ingestion/service.js` to route PPTX files
+**Scope:** `backend/src/ingestion/service.js`
+**Expected Result:** MIME type detection and routing to PPTX parser
+**Tests:** Integration tests with sample PPTX files
+
+---
+
+### D3.2.2.4 — Add controller tests for PPTX upload
+**Business Logic:** Verify upload endpoints handle PPTX files
+**Scope:** `backend/src/ingestion/controller.test.js`
+**Expected Result:** Test coverage for PPTX upload paths
+**Tests:** Jest tests for successful upload, error handling
+
+---
+
+## Phase 3: Transcript/Audio/Video Support
+
+### D3.2.3.1 — Create transcript parser service
+**Business Logic:** Parse subtitle files (.srt, .vtt) and plain text transcripts
+**Scope:** `backend/src/ingestion/transcript.js`
+**Expected Result:** Service with `parse(filePath)` function returning `{ text, timestamps, metadata }`
+**Tests:** Unit tests for .srt, .vtt, .txt formats
+
+---
+
+### D3.2.3.2 — Integrate OpenAI Whisper CLI for audio transcription
+**Business Logic:** Call `openai-whisper` CLI to transcribe audio files
+**Scope:** `backend/src/ingestion/whisper.js`
+**Expected Result:** Service with `transcribe(filePath)` function returning `{ text, metadata }`
+**Tests:** Integration tests with sample audio files (mock if Whisper unavailable)
+
+---
+
+### D3.2.3.3 — Update ingestion service to handle transcripts/audio
+**Business Logic:** Extend `backend/src/ingestion/service.js` to route transcript/audio files
+**Scope:** `backend/src/ingestion/service.js`
+**Expected Result:** MIME type detection and routing to appropriate handler
+**Tests:** Integration tests with sample transcript/audio files
+
+---
+
+### D3.2.3.4 — Add controller tests for transcript/audio upload
+**Business Logic:** Verify upload endpoints handle transcript/audio files
+**Scope:** `backend/src/ingestion/controller.test.js`
+**Expected Result:** Test coverage for transcript/audio upload paths
+**Tests:** Jest tests for successful upload, error handling
+
+---
+
+## Phase 4: Unified Pipeline & Documentation
+
+### D3.2.4.1 — Update MIME type detection
+**Business Logic:** Add new MIME types to ingestion router
+**Scope:** `backend/src/ingestion/router.js`
+**Expected Result:** MIME type mappings for CSV, Excel, PPTX, audio, video, subtitles
+**Tests:** Route registration verification
+
+---
+
+### D3.2.4.2 — Create comprehensive integration tests
+**Business Logic:** End-to-end tests for all new format uploads
+**Scope:** `backend/src/ingestion/flow.integration.test.js`
+**Expected Result:** Test suite covering all new formats
+**Tests:** Integration tests with real sample files
+
+---
+
+### D3.2.4.3 — Update documentation
+**Business Logic:** Document new format support in user-facing docs
+**Scope:** `docs/FILE_INGESTION_STRATEGY.md`, `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`
+**Expected Result:** Updated docs with implementation status
+**Tests:** N/A (documentation only)
+
+---
+
+### D3.2.4.4 — Final commit and push
+**Business Logic:** Commit all changes and push to GitHub
+**Scope:** All files
+**Expected Result:** All code pushed to `origin/main`
+**Tests:** Git push verification
+
+---
+
+## Worker Assignment Protocol
+
+1. **Assign one slice per worker** (fresh worker per slice)
+2. **Timeout:** 5-10 minutes per coding slice
+3. **Verify:** Check code/tests/commits after each completion
+4. **Push:** Main session handles git push after verification
+5. **Continue:** Immediately proceed to next slice unless blocked
+
+## Current Status
+- **D3.2 Design:** ✅ Complete (`docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
+- **Next:** Start Phase 1 (CSV/Excel) with D3.2.1.1
