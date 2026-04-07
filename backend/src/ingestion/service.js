@@ -12,6 +12,8 @@ const {
 const { refreshOutline } = require('../outline/service');
 
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const { parse: csvParse } = require('./csv');
+const { parse: excelParse } = require('./excel');
 
 function validateStoredFile(storedFile) {
   const metadata = storedFile?.metadata;
@@ -50,6 +52,16 @@ function inferMaterialType({ mimeType, originalFileName } = {}) {
 
   if (normalizedMimeType.startsWith('image/')) {
     return 'image';
+  }
+
+  if (normalizedMimeType === 'text/csv' || extension === '.csv') {
+    return 'csv';
+  }
+
+  if (normalizedMimeType === 'application/vnd.ms-excel' || 
+      normalizedMimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      extension === '.xls' || extension === '.xlsx') {
+    return 'excel';
   }
 
   return 'file';
@@ -98,6 +110,23 @@ function buildIngestionResult({ operation, storedFile, extractionResult }) {
       metadata: extractionResult?.metadata || {},
     },
   };
+}
+
+async function extractFileContent(filePath, mimeType) {
+  const extension = path.extname(String(filePath || '')).toLowerCase();
+  const normalizedMimeType = String(mimeType || '').toLowerCase();
+
+  if (normalizedMimeType === 'text/csv' || extension === '.csv') {
+    return await csvParse(filePath);
+  }
+
+  if (normalizedMimeType === 'application/vnd.ms-excel' || 
+      normalizedMimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      extension === '.xls' || extension === '.xlsx') {
+    return await excelParse(filePath);
+  }
+
+  throw new Error(`Unsupported file type: ${mimeType || extension}`);
 }
 
 async function ingestExtractedFileAsMaterial({
