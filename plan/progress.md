@@ -235,14 +235,23 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 
 ## Phase 6 — Audio Features
 
-### D6.1 Lesson narration 📋 PLANNED
-- [ ] Text-to-speech integration (ElevenLabs TTS)
-- [ ] Audio file generation and storage
-- [ ] Save artifact: audio service + playback
+### D6.1 Lesson narration ✅ COMPLETE 🎉🎉
+- [x] Implement flexible TTS engine (ElevenLabs, local, system)
+- [x] Smart text preprocessing with pause markers
+- [x] Create audio mixer with ducking and normalization
+- [x] Add 6 music styles (calm, upbeat, classical, jazz, nature, silence)
+- [x] Build narration service with generation and status tracking
+- [x] Create 8 API endpoints for narration operations
+- [x] Save artifact: service layer + docs/tests
+- [x] Commit and push (ec05c54, ca9d817)
+- [x] D6.1_LESSON_NARRATION_FUNCTION_BREAKDOWN.md
+- [x] D6.1_LESSON_NARRATION_DESIGN.md
+- [x] D6.1_LESSON_NARRATION_COMPLETION_SUMMARY.md
 
 ### D6.2 Voice interaction 📋 PLANNED
-- [ ] Speech-to-text integration (Whisper)
-- [ ] Voice command parsing
+- [ ] Speech-to-text integration (Whisper CLI)
+- [ ] Voice command parsing and recognition
+- [ ] Interactive voice quiz support
 - [ ] Save artifact: voice service + API
 
 ---
