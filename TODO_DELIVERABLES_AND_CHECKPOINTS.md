@@ -150,9 +150,14 @@ Rules for use:
 - [x] Plan transcript ingestion
 - [x] Save artifact: design doc updates
   - Artifact: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`
-- [ ] Create function-level breakdown checklist
-- [ ] Implement CSV/Excel support
-- [ ] Implement PPT/slides support
+- [x] Create function-level breakdown checklist
+  - Artifact: `D3.2.1_CSV_EXCEL_FUNCTION_BREAKDOWN.md`
+- [x] Implement CSV/Excel support ✅ Complete
+  - csv.js, excel.js parsers created
+  - service.js routing updated
+  - Unit tests written
+- [x] Implement PPT/slides support ✅ Complete
+  - pptx.js parser created with tests
 - [ ] Implement transcript/audio/video support
 - [ ] Save artifact: ingestion services + tests
 - [ ] Commit and push

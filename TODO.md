@@ -54,8 +54,12 @@
 - [x] Plan Excel/CSV support (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
 - [x] Plan PPT/slides support (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
 - [x] Plan transcript ingestion (design doc: `docs/D3.2_FUTURE_INGESTION_FORMATS_DESIGN.md`)
-- [ ] Implement Excel/CSV support
-- [ ] Implement PPT/slides support
+- [x] Implement Excel/CSV support ✅ Complete
+  - csv.js parser created with tests (D3.2.1.3)
+  - excel.js parser created with tests (D3.2.1.4)
+  - service.js routing updated (D3.2.1.5)
+- [x] Implement PPT/slides support ✅ Complete
+  - pptx.js parser created with tests (D3.2.2)
 - [ ] Implement transcript/audio/video support
 
 ## P2 — Progress Intelligence
