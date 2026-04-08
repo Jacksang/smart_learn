@@ -60,7 +60,9 @@
   - service.js routing updated (D3.2.1.5)
 - [x] Implement PPT/slides support ✅ Complete
   - pptx.js parser created with tests (D3.2.2)
-- [ ] Implement transcript/audio/video support
+- [x] Implement transcript/audio/video support ✅ Complete
+  - transcript.js parser created with tests (D3.2.3)
+  - SRT/VTT/TXT formats supported
 
 ## P2 — Progress Intelligence
 - [ ] Weak-area detection
