@@ -16,6 +16,7 @@ const { parse: csvParse } = require('./csv');
 const { parse: excelParse } = require('./excel');
 const { parse: transcriptParse } = require('./transcript');
 const { parse: audioParse } = require('./audio');
+const { parse: videoParse } = require('./video');
 
 function validateStoredFile(storedFile) {
   const metadata = storedFile?.metadata;
@@ -81,6 +82,13 @@ function inferMaterialType({ mimeType, originalFileName } = {}) {
       extension === '.mp3' || extension === '.wav' || 
       extension === '.m4a' || extension === '.flac' || extension === '.ogg') {
     return 'audio';
+  }
+
+  // Video files
+  if (normalizedMimeType.startsWith('video/') || 
+      extension === '.mp4' || extension === '.avi' || 
+      extension === '.mov' || extension === '.mkv') {
+    return 'video';
   }
 
   // Default to file type
@@ -158,6 +166,13 @@ async function extractFileContent(filePath, mimeType) {
       extension === '.mp3' || extension === '.wav' || 
       extension === '.m4a' || extension === '.flac' || extension === '.ogg') {
     return await audioParse(filePath);
+  }
+
+  // Video files (mp4, avi, mov, mkv)
+  if (normalizedMimeType.startsWith('video/') || 
+      extension === '.mp4' || extension === '.avi' || 
+      extension === '.mov' || extension === '.mkv') {
+    return await videoParse(filePath);
   }
 
   throw new Error(`Unsupported file type: ${mimeType || extension}`);
