@@ -11,13 +11,54 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 
 **Status Annotations:**
 - `[ ]` Task to do
-- `[*]` Task is ongoing  
+- `[*]` Task is ongoing
 - `[x]` Task is done
 - `[~]` Task is obsoleted or bypassed
 
 ---
 
-## Phase 1 — Backend MVP Foundation (Completed)
+## Phase 0 — Planning Artifacts (COMPLETE)
+
+### D0.1 PostgreSQL schema spec ✅ COMPLETE
+- [x] Draft schema entities and relationships
+- [x] Define table-by-table columns
+- [x] Define enums/status fields
+- [x] Define indexes and MVP scope notes
+- [x] Save artifact: `req/POSTGRESQL_SCHEMA_SPEC.md`
+- [x] Commit and push
+
+### D0.2 API endpoint spec ✅ COMPLETE
+- [x] Map endpoints from schema and product flow
+- [x] Define request/response shapes
+- [x] Define error handling conventions
+- [x] Define MVP vs later endpoints
+- [x] Save artifact: `docs/API_ENDPOINT_SPEC.md`
+- [x] Commit and push
+
+### D0.3 Lesson state machine ✅ COMPLETE
+- [x] Define Learn / Review / Quiz / Reinforce states
+- [x] Define transitions and interruption handling
+- [x] Define deferred-question behavior
+- [x] Save artifact: `docs/LESSON_STATE_MACHINE.md`
+- [x] Commit and push
+
+### D0.4 File ingestion strategy ✅ COMPLETE
+- [x] Define MVP support for text / PDF / DOCX / image OCR
+- [x] Define extraction pipeline expectations
+- [x] Define metadata storage rules
+- [x] Save artifact: `docs/FILE_INGESTION_STRATEGY.md`
+- [x] Commit and push
+
+### D0.5 Feedback and motivation template catalog ✅ COMPLETE
+- [x] Define encouraging feedback patterns
+- [x] Define struggle recovery templates
+- [x] Define progress language rules
+- [x] Save artifact: `docs/FEEDBACK_TEMPLATE_CATALOG.md`
+- [x] Commit and push
+
+---
+
+## Phase 1 — Backend MVP Foundation (COMPLETE)
 
 ### D1.1 PostgreSQL migration foundation ✅ COMPLETE
 - [x] Remove/retire Mongo-oriented persistence path
@@ -56,7 +97,7 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 
 ---
 
-## Phase 2 — Tutor Flow and Learning Experience
+## Phase 2 — Tutor Flow and Learning Experience (COMPLETE)
 
 ### D2.1 Learning sessions ✅ COMPLETE
 - [x] Implement learning session model
@@ -104,13 +145,16 @@ This is the concrete execution checklist for long-running work on Smart Learn.
   - D3.3.1.1 SRT parsing implemented
   - D3.3.1.2 VTT parsing implemented
   - D3.3.1.3 Plain text parsing implemented
-- [ ] Audio transcription (Whisper CLI integration)
-  - D3.3.2.1 Integrate Whisper CLI for audio files
-  - D3.3.2.2 Create transcription service wrapper
+- [x] Audio transcription (Whisper CLI integration) ✅ COMPLETE 🎉
+  - audio.js parser created with tests
+  - Whisper CLI integration complete
+  - Service.js routing updated for audio files
+  - D3.3.2.1 Audio format support (mp3, wav, m4a, flac, ogg)
+  - D3.3.2.2 Transcription service wrapper complete
+  - Design documentation: req/D3.3_TRANSCRIPT_AUDIO_VIDEO_DESIGN.md
 - [ ] Video frame extraction
   - D3.3.3.1 Extract frames using ffmpeg
   - D3.3.3.2 Video metadata extraction
-- [ ] Save artifact: ingestion services + tests
 
 ---
 
@@ -167,7 +211,9 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 ## Current recommended next checkpoint
 - [x] Complete D3.1 PDF / DOCX / image support
 - [x] Complete D3.2 Future ingestion formats (CSV/Excel/PPT)
-- [ ] Start D3.3 Transcript/Audio/Video support (in progress - subtitle parsing complete)
+- [x] Complete D3.3.1 Subtitle parsing
+- [x] Complete D3.3.2 Audio transcription
+- [ ] Start D3.3.3 Video processing (next priority)
 - [ ] Begin D4 Motivation Engine
 
 ---
