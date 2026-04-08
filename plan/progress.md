@@ -183,17 +183,23 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 
 ## Phase 4 — Motivation and Retention Layer
 
-### D4.1 Motivation engine basics 📋 PLANNED
-- [ ] Implement feedback template selection rules
-- [ ] Implement constructive progress labels
-- [ ] Implement effort/focus/resilience milestone logic
-- [ ] Save artifact: service layer + docs/tests
+### D4.1 Motivation engine basics ✅ COMPLETE 🎉
+- [x] Implement feedback template selection rules
+- [x] Implement constructive progress labels
+- [x] Implement effort/focus/resilience milestone logic
+- [x] Save artifact: service layer + docs/tests
+- [x] Commit and push (27ea22a)
+- [x] D4.1_MOTIVATION_ENGINE_BASES_COMPLETION_SUMMARY.md
 
-### D4.2 Adaptive encouragement 📋 PLANNED
-- [ ] Add struggle signal detection
-- [ ] Add confidence-support messaging rules
-- [ ] Add next-step recommendation logic
-- [ ] Save artifact: service layer + docs/tests
+### D4.2 Adaptive encouragement ✅ COMPLETE 🎉🎉
+- [x] Add struggle signal detection (5 pattern types)
+- [x] Add confidence-support messaging rules (5 message types)
+- [x] Add next-step recommendation logic (6 action types)
+- [x] Add adaptive learning for student preferences
+- [x] Save artifact: 5 API endpoints + service layer
+- [x] Commit and push (9071151)
+- [x] D4.2_ADAPTIVE_ENCOURAGEMENT_DESIGN.md
+- [x] D4.2_ADAPTIVE_ENCOURAGEMENT_FUNCTION_BREAKDOWN.md
 
 ---
 
