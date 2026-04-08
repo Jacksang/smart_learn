@@ -53,7 +53,7 @@ async function parseSRT(filePath) {
     }
   }
   
-  return {
+  return { 
     text: textLines.join('\n\n'),
     timestamps,
     metadata: {
@@ -70,38 +70,19 @@ async function parseSRT(filePath) {
 async function parseVTT(filePath) {
   const fileContent = fs.readFileSync(filePath, 'utf8');
   
-  // Split by subtitle blocks (skip WEBVTT header)
-  const lines = fileContent.split('\n');
-  const blocks = [];
-  let currentBlock = '';
-  
-  for (const line of lines) {
-    if (line.startsWith('WEBVTT')) continue; // Skip header
-    
-    if (line.trim() === '') {
-      if (currentBlock) {
-        blocks.push(currentBlock);
-        currentBlock = '';
-      }
-    } else {
-      currentBlock += line + '\n';
-    }
-  }
-  
-  if (currentBlock) {
-    blocks.push(currentBlock);
-  }
+  // Remove WEBVTT header and split by subtitle blocks
+  const blocks = fileContent.replace(/^WEBVTT[\s\S]*?$/, '').trim().split(/\n\n+/);
   
   const textLines = [];
   const timestamps = [];
   
   for (const block of blocks) {
-    const blockLines = block.trim().split('\n');
+    const lines = block.split('\n');
     
-    if (blockLines.length < 2) continue; // Skip invalid blocks
+    if (lines.length < 2) continue; // Skip invalid blocks
     
     // Parse timestamp line
-    const timestampMatch = blockLines[0].match(/(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})/);
+    const timestampMatch = lines[1].match(/(\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}\.\d{3})/);
     if (timestampMatch) {
       timestamps.push({
         start: timestampMatch[1],
@@ -110,13 +91,13 @@ async function parseVTT(filePath) {
     }
     
     // Collect text content (skip index and timestamp lines)
-    const text = blockLines.slice(timestampMatch ? 1 : 0).join('\n');
+    const text = lines.slice(2).join('\n');
     if (text.trim()) {
       textLines.push(text);
     }
   }
   
-  return {
+  return { 
     text: textLines.join('\n\n'),
     timestamps,
     metadata: {
@@ -133,7 +114,7 @@ async function parseVTT(filePath) {
 async function parsePlainText(filePath) {
   const fileContent = fs.readFileSync(filePath, 'utf8');
   
-  return {
+  return { 
     text: fileContent.trim(),
     timestamps: [],
     metadata: {
@@ -144,4 +125,4 @@ async function parsePlainText(filePath) {
   };
 }
 
-module.exports = { parse, parseSRT, parseVTT, parsePlainText };
+module.exports = { parse };
