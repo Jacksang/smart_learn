@@ -101,8 +101,15 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 ### D3.3 Transcript/Audio/Video support 🔄 IN PROGRESS
 - [x] Subtitle file parsing (.srt, .vtt) ✅ COMPLETE
   - transcript.js parser created with tests
+  - D3.3.1.1 SRT parsing implemented
+  - D3.3.1.2 VTT parsing implemented
+  - D3.3.1.3 Plain text parsing implemented
 - [ ] Audio transcription (Whisper CLI integration)
+  - D3.3.2.1 Integrate Whisper CLI for audio files
+  - D3.3.2.2 Create transcription service wrapper
 - [ ] Video frame extraction
+  - D3.3.3.1 Extract frames using ffmpeg
+  - D3.3.3.2 Video metadata extraction
 - [ ] Save artifact: ingestion services + tests
 
 ---
