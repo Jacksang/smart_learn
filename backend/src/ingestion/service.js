@@ -14,6 +14,8 @@ const { refreshOutline } = require('../outline/service');
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const { parse: csvParse } = require('./csv');
 const { parse: excelParse } = require('./excel');
+const { parse: transcriptParse } = require('./transcript');
+const { parse: audioParse } = require('./audio');
 
 function validateStoredFile(storedFile) {
   const metadata = storedFile?.metadata;
@@ -42,28 +44,46 @@ function inferMaterialType({ mimeType, originalFileName } = {}) {
   const normalizedMimeType = String(mimeType || '').toLowerCase();
   const extension = path.extname(String(originalFileName || '')).toLowerCase();
 
+  // PDF files
   if (normalizedMimeType === 'application/pdf' || extension === '.pdf') {
     return 'pdf';
   }
 
+  // DOCX files
   if (normalizedMimeType === DOCX_MIME_TYPE || extension === '.docx') {
     return 'docx';
   }
 
+  // Image files
   if (normalizedMimeType.startsWith('image/')) {
     return 'image';
   }
 
+  // CSV files
   if (normalizedMimeType === 'text/csv' || extension === '.csv') {
     return 'csv';
   }
 
+  // Excel files
   if (normalizedMimeType === 'application/vnd.ms-excel' || 
       normalizedMimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
       extension === '.xls' || extension === '.xlsx') {
     return 'excel';
   }
 
+  // Subtitle files
+  if (extension === '.srt' || extension === '.vtt') {
+    return 'subtitle';
+  }
+
+  // Audio files
+  if (normalizedMimeType.startsWith('audio/') || 
+      extension === '.mp3' || extension === '.wav' || 
+      extension === '.m4a' || extension === '.flac' || extension === '.ogg') {
+    return 'audio';
+  }
+
+  // Default to file type
   return 'file';
 }
 
@@ -116,14 +136,28 @@ async function extractFileContent(filePath, mimeType) {
   const extension = path.extname(String(filePath || '')).toLowerCase();
   const normalizedMimeType = String(mimeType || '').toLowerCase();
 
+  // CSV files
   if (normalizedMimeType === 'text/csv' || extension === '.csv') {
     return await csvParse(filePath);
   }
 
+  // Excel files
   if (normalizedMimeType === 'application/vnd.ms-excel' || 
       normalizedMimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
       extension === '.xls' || extension === '.xlsx') {
     return await excelParse(filePath);
+  }
+
+  // Subtitle files (SRT, VTT) and text transcripts
+  if (extension === '.srt' || extension === '.vtt' || extension === '.txt') {
+    return await transcriptParse(filePath);
+  }
+
+  // Audio files (mp3, wav, m4a, flac, ogg)
+  if (normalizedMimeType.startsWith('audio/') || 
+      extension === '.mp3' || extension === '.wav' || 
+      extension === '.m4a' || extension === '.flac' || extension === '.ogg') {
+    return await audioParse(filePath);
   }
 
   throw new Error(`Unsupported file type: ${mimeType || extension}`);
