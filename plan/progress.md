@@ -218,10 +218,18 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 - [x] D5.1_FLASHCARD_GENERATION_DESIGN.md
 - [x] D5.1_FLASHCARD_GENERATION_COMPLETION_SUMMARY.md
 
-### D5.2 Concept mapping 📋 PLANNED
-- [ ] Build visual concept map generation
-- [ ] Link concepts to outline items
-- [ ] Save artifact: frontend + backend services
+### D5.2 Concept mapping ✅ COMPLETE 🎉🎉
+- [x] Build visual concept map generation
+- [x] Analyze concept relationships (causal, hierarchical, associative)
+- [x] Implement 3 layout algorithms (tree, network, timeline)
+- [x] Integrate concepts with lesson outline for coverage analysis
+- [x] Calculate centrality metrics (degree, betweenness, closeness)
+- [x] Create 7 API endpoints for concept mapping
+- [x] Save artifact: service layer + docs/tests
+- [x] Commit and push (46f8366, 43197f3)
+- [x] D5.2_CONCEPT_MAPPING_FUNCTION_BREAKDOWN.md
+- [x] D5.2_CONCEPT_MAPPING_DESIGN.md
+- [x] D5.2_CONCEPT_MAPPING_COMPLETION_SUMMARY.md
 
 ---
 
