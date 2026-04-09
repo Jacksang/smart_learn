@@ -498,6 +498,13 @@ This is the concrete execution checklist for long-running work on Smart Learn.
 - [ ] Create plan breakdown file for D10 Component Implementation
 - [ ] Begin D10.1 Vue.js Project Setup (next phase, awaiting approval)
 
+### Path Resolution Issues ✅ RESOLVED
+- [x] Documented tilde (~) path resolution issue
+- [x] Created skill file: skills/path-resolution-issues/SKILL.md
+- [x] Best practice: Always use full absolute paths for file operations
+- [x] Workspace path reference documented
+- [x] Saved to memory for future reference
+
 ---
 
 **Last Updated:** 2026-04-09  
