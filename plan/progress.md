@@ -492,9 +492,30 @@ This is the concrete execution checklist for long-running work on Smart Learn.
   - All backend API endpoints mapped
   - TypeScript types defined
   - 7-day implementation timeline
+- [x] Complete API Gap Analysis (17KB)
+  - Identified 8 categories of missing backend APIs
+  - Documented 5 backend features without UI designs
+  - Provided recommended action plan
+  - Listed all missing endpoints with impact
+  - Created comprehensive gap analysis document
+  - Saved artifact: plan/BACKEND_UI_GAP_ANALYSIS.md
+- [x] Create Backend Profile & Settings API Requirements (23KB)
+  - 12 API endpoints for user profile management
+  - Avatar upload and management
+  - Notification and learning preferences
+  - Password change functionality
+  - Subscription information
+  - Data export compliance
+  - Session management
+  - Complete specification with validation, security, testing
+  - Database schema changes documented
+  - Implementation plan (1-2 weeks)
+  - Saved artifact: req/BACKEND_PROFILE_SETTINGS_API_REQUIREMENTS.md
 - [x] Save artifact: req/D10_UI_IMPLEMENTATION_REQUIREMENT.md
 - [x] Commit and push to GitHub ✅ COMPLETE
 - [ ] User review and approval for D10 UI Implementation (PENDING)
+- [ ] Review API gap analysis findings and approve backend requirement priorities
+- [ ] Create additional backend requirement documents for identified gaps
 - [ ] Create plan breakdown file for D10 Component Implementation
 - [ ] Begin D10.1 Vue.js Project Setup (next phase, awaiting approval)
 

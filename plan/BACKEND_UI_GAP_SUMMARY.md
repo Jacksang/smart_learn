@@ -272,27 +272,27 @@ Please review and decide on the following:
 ### 1. **Priority of Missing APIs**
 Which gaps should be addressed first?
 
-- [ ] User Profile & Settings (Profile page blocked)
-- [ ] Enhanced Authentication (Account recovery blocked)
-- [ ] Analytics APIs (Analytics page limited)
-- [ ] Session Management (Session lifecycle incomplete)
-- [ ] Notification System (Notifications impossible)
-- [ ] Question Enhancements (Quiz experience limited)
-- [ ] File Processing (Download missing)
+- [1] User Profile & Settings (Profile page blocked)
+- [2] Enhanced Authentication (Account recovery blocked)
+- [6] Analytics APIs (Analytics page limited)
+- [3] Session Management (Session lifecycle incomplete)
+- [4] Notification System (Notifications impossible)
+- [5] Question Enhancements (Quiz experience limited)
+- [7] File Processing (Download missing)
 
 ### 2. **Design Enhancements**
 Which backend features without UI should be designed first?
 
-- [ ] Material Weights interface
-- [ ] Outline Versioning UI
-- [ ] Deferred Question Management
-- [ ] Session Mode UI
-- [ ] Enhanced File Processing
+- [5] Material Weights interface
+- [4] Outline Versioning UI
+- [3] Deferred Question Management
+- [2] Session Mode UI
+- [1] Enhanced File Processing
 
 ### 3. **Frontend Requirements Update**
 Should the frontend requirements document be updated to:
 
-- [ ] Include all 12 API requirement documents
+- [1] Include all 12 API requirement documents
 - [ ] Reflect actual backend capabilities
 - [ ] Prioritize features based on API availability
 - [ ] Set implementation phases based on API development
@@ -300,7 +300,7 @@ Should the frontend requirements document be updated to:
 ### 4. **Implementation Order**
 What is the preferred implementation order?
 
-- [ ] Backend APIs first, then frontend
+- [1] Backend APIs first, then frontend
 - [ ] Core pages first (Dashboard, Learning, Quiz), then Profile/Settings
 - [ ] MVP features first, then enhancements
 - [ ] Parallel development (backend and frontend)
