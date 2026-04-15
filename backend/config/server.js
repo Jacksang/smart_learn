@@ -10,28 +10,28 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-const userRoutes = require('../src/users/router');
-const outlineRoutes = require('../src/outline/router');
-const answerRoutes = require('../src/answers/router');
-const progressRoutes = require('../src/progress/router');
-const sessionRoutes = require('../src/sessions/router');
-const deferredQuestionRoutes = require('../src/deferred-questions/router');
-const reinforceRoutes = require('../src/reinforce/router');
-const projectRoutes = require('../src/projects/router');
-const materialRoutes = require('../src/materials/router');
+// Routes - Import routers
+const userRouter = require('../src/users/router');
+const outlineRouter = require('../src/outline/router');
+const answerRouter = require('../src/answers/router');
+const progressRouter = require('../src/progress/router');
+const sessionRouter = require('../src/sessions/router');
+const deferredQuestionRouter = require('../src/deferred-questions/router');
+const reinforceRouter = require('../src/reinforce/router');
+const projectRouter = require('../src/projects/router');
+const materialRouter = require('../src/materials/router');
 
-// Mount routes
-app.use('/api/users', userRoutes);
-app.use('/api/outline', outlineRoutes);
-app.use('/api', answerRoutes);
-app.use('/api', progressRoutes);
-app.use('/api', sessionRoutes);
-app.use('/api', deferredQuestionRoutes);
-app.use('/api', reinforceRoutes);
-app.use('/api/answers', answerRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/materials', materialRoutes);
+// Mount routes using router instances
+app.use('/api/users', userRouter);
+app.use('/api/outline', outlineRouter);
+app.use('/api', answerRouter);
+app.use('/api', progressRouter);
+app.use('/api', sessionRouter);
+app.use('/api', deferredQuestionRouter);
+app.use('/api', reinforceRouter);
+app.use('/api/answers', answerRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/materials', materialRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
