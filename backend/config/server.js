@@ -12,6 +12,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes - Import routers
 const userRouter = require('../src/users/router');
+const authRouter = require('../src/auth/auth-router');
 const outlineRouter = require('../src/outline/router');
 const answerRouter = require('../src/answers/router');
 const progressRouter = require('../src/progress/router');
@@ -23,6 +24,7 @@ const materialRouter = require('../src/materials/router');
 
 // Mount routes using router instances
 app.use('/api/users', userRouter);
+app.use('/api/auth', authRouter);
 app.use('/api/outline', outlineRouter);
 app.use('/api', answerRouter);
 app.use('/api', progressRouter);
