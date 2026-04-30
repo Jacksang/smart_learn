@@ -1,13 +1,31 @@
 const {
   createForProjectAndUser,
   findActiveByProjectForUser,
+  findByIdForProjectAndUser,
   updateSessionState,
+  createProgressSnapshot,
+  getProgressSnapshots,
+  getSessionSummary,
+  upsertSessionSummary,
+  recordModeSwitch,
+  getModeHistory,
+  pauseSession,
+  resumeSession,
+  updateSessionProgress,
+  endSession,
+  switchSessionMode,
+  mapSessionRow,
+  mapSessionRowExtended,
 } = require('./repository');
 const {
   buildSessionStateUpdates,
   mapSessionState,
   normalizeSessionMode,
   normalizeCurrentTopicId,
+  generateSessionSummary,
+  calculateSessionStats,
+  identifyWeakTopics,
+  getRecommendedActions,
 } = require('./service');
 
 function normalizeString(value) {
@@ -252,3 +270,301 @@ exports.updateProjectSessionState = async (req, res, next) => {
 };
 
 exports.mapSessionToApi = mapSessionToApi;
+
+// ── New session lifecycle & detail functions ────────────────────────────────
+
+const VALID_MODES = ['learn', 'review', 'quiz', 'reinforce'];
+
+exports.pauseProjectSession = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    if (session.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Only active sessions can be paused' });
+    }
+
+    const reason = normalizeString(req.body?.reason) ?? null;
+    const result = await pauseSession(sessionId, reason);
+
+    return res.status(200).json({
+      success: true,
+      data: { session: mapSessionRowExtended(result) },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.resumeProjectSession = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    if (session.status !== 'paused') {
+      return res.status(400).json({ success: false, message: 'Only paused sessions can be resumed' });
+    }
+
+    const result = await resumeSession(sessionId);
+
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { session: mapSessionRowExtended(result) },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.updateProjectSessionProgress = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    const body = req.body ?? {};
+    const progress = body.progress;
+    const currentQuestionId = normalizeString(body.currentQuestionId);
+    const currentOutlineItemId = body.outlineItemId ?? readCurrentOutlineItemId(body);
+    const sessionDuration = body.timeSpentInSession;
+    const currentMode = body.mode;
+    const metadata = body.metadata;
+
+    const updatedSession = await updateSessionProgress(sessionId, {
+      progress,
+      currentQuestionId,
+      currentOutlineItemId,
+      sessionDuration,
+      currentMode,
+      metadata,
+    });
+
+    const snapshot = await createProgressSnapshot(sessionId, {
+      progress,
+      currentOutlineItemId,
+      currentQuestionId,
+      questionsAnswered: body.questionsAnswered,
+      correctAnswers: body.correctAnswers,
+      timeSpent: sessionDuration,
+      mood: body.mood,
+      notes: body.notes,
+      data: metadata,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: { session: mapSessionRowExtended(updatedSession), snapshot },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.endProjectSession = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    if (session.status === 'completed') {
+      return res.status(400).json({ success: false, message: 'Session is already completed' });
+    }
+
+    const duration = req.body?.duration ?? 0;
+    const endedSession = await endSession(sessionId, duration);
+    const summary = await generateSessionSummary(sessionId);
+
+    return res.status(200).json({
+      success: true,
+      data: { session: mapSessionRowExtended(endedSession), summary },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getProjectSessionDetails = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    const progress = await getProgressSnapshots(sessionId);
+    const summary = await getSessionSummary(sessionId);
+
+    return res.status(200).json({
+      success: true,
+      data: { session: mapSessionRowExtended(session), progress, summary },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getProjectSessionProgress = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    const snapshots = await getProgressSnapshots(sessionId);
+    const latestSnapshot = Array.isArray(snapshots) && snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+    const stats = await calculateSessionStats(sessionId);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        progress: {
+          currentProgress: latestSnapshot?.progress ?? 0,
+          timeSpent: latestSnapshot?.timeSpent ?? 0,
+          questionsAnswered: latestSnapshot?.questionsAnswered ?? 0,
+          correctAnswers: latestSnapshot?.correctAnswers ?? 0,
+          accuracy: latestSnapshot?.questionsAnswered
+            ? Math.round((latestSnapshot.correctAnswers / latestSnapshot.questionsAnswered) * 100)
+            : 0,
+          ...stats,
+        },
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.switchProjectSessionMode = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    const newMode = normalizeString(req.body?.mode);
+
+    if (!newMode) {
+      return res.status(400).json({ success: false, message: 'mode is required' });
+    }
+
+    if (!VALID_MODES.includes(newMode)) {
+      return res.status(400).json({ success: false, message: 'Invalid mode. Must be one of: learn, review, quiz, reinforce' });
+    }
+
+    const oldMode = session.mode ?? session.current_mode ?? null;
+    const updatedSession = await switchSessionMode(sessionId, newMode);
+    const modeInfo = await recordModeSwitch(sessionId, oldMode, newMode, req.body?.reason ?? null);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        session: mapSessionRowExtended(updatedSession),
+        previousMode: oldMode,
+        modeInfo,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+exports.getProjectSessionModeHistory = async (req, res, next) => {
+  try {
+    const sessionId = normalizeString(req.params.sessionId);
+    const userId = req.user.id;
+
+    if (!sessionId) {
+      return res.status(400).json({ success: false, message: 'sessionId is required' });
+    }
+
+    const session = await findByIdForProjectAndUser({ sessionId, projectId: normalizeString(req.params.projectId), userId });
+
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found' });
+    }
+
+    const modeHistory = await getModeHistory(sessionId);
+
+    const modeDistribution = {};
+    if (Array.isArray(modeHistory)) {
+      for (const entry of modeHistory) {
+        const mode = entry.newMode ?? entry.new_mode ?? entry.mode;
+        if (mode) {
+          modeDistribution[mode] = (modeDistribution[mode] || 0) + 1;
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: { modeHistory, modeDistribution },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
