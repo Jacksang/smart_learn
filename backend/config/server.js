@@ -21,6 +21,7 @@ const deferredQuestionRouter = require('../src/deferred-questions/router');
 const reinforceRouter = require('../src/reinforce/router');
 const projectRouter = require('../src/projects/router');
 const materialRouter = require('../src/materials/router');
+const notificationRouter = require('../src/notifications/router');
 
 // Mount routes using router instances
 app.use('/api/users', userRouter);
@@ -34,6 +35,7 @@ app.use('/api', reinforceRouter);
 app.use('/api/answers', answerRouter);
 app.use('/api/projects', projectRouter);
 app.use('/api/materials', materialRouter);
+app.use('/api/notifications', notificationRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
