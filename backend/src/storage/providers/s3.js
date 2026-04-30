@@ -4,7 +4,7 @@
  * STORAGE_PROVIDER=s3
  * Environment variables:
  *   S3_BUCKET       - bucket name (default: smartlearn-materials)
- *   S3_REGION       - AWS region  (default: us-east-1)
+ *   S3_REGION       - AWS region  (default: ap-southeast-1)
  *   S3_ENDPOINT     - custom endpoint for S3-compatible services (MinIO, etc.)
  *
  * Auto-detects AWS credentials via the standard chain:
@@ -16,7 +16,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 class S3Provider {
   constructor() {
-    const region = process.env.S3_REGION || 'us-east-1';
+    const region = process.env.S3_REGION || 'ap-southeast-1';
     const endpoint = process.env.S3_ENDPOINT || undefined;
 
     this.bucket = process.env.S3_BUCKET || 'smartlearn-materials';

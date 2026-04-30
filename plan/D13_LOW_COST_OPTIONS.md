@@ -123,7 +123,7 @@ server {
 ```bash
 # 1. Create Lightsail instance ($5/mo, 1GB RAM)
 aws lightsail create-instances --instance-name smartlearn \
-  --availability-zone us-east-1a --blueprint-id ubuntu_22_04 \
+  --availability-zone ap-southeast-1a --blueprint-id ubuntu_22_04 \
   --bundle-id small_1_0
 
 # 2. SSH in, install Docker, clone and run

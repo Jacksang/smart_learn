@@ -153,7 +153,7 @@ ALIYUN_ACCESS_KEY_SECRET=xxx
 # AWS (already implemented)
 STORAGE_PROVIDER=s3
 S3_BUCKET=smartlearn-materials
-S3_REGION=us-east-1
+S3_REGION=ap-southeast-1
 
 # Development (default)
 STORAGE_PROVIDER=local

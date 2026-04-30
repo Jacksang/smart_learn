@@ -228,8 +228,9 @@ Everything else is stateless Docker containers. Replace any VM without losing da
 # Phase 1: Lightsail $10/mo, deploy this week
 aws lightsail create-instances \
   --instance-name smartlearn \
-  --bundle-id medium_1_0 \    # 2GB RAM, $10/mo
-  --blueprint-id ubuntu_22_04
+  --availability-zone ap-southeast-1a \
+  --blueprint-id ubuntu_22_04 \
+  --bundle-id medium_1_0    # 2GB RAM, $10/mo
 
 # Same docker-compose.yml scales from Phase 1 through Phase 3
 # with zero changes. Only environment variables change.

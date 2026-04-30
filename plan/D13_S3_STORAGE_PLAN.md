@@ -99,7 +99,7 @@ The backend already has file ingestion (`backend/src/ingestion/`). We just need 
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-const s3 = new S3Client({ region: process.env.AWS_REGION || 'us-east-1' });
+const s3 = new S3Client({ region: process.env.AWS_REGION || 'ap-southeast-1' });
 const BUCKET = process.env.S3_BUCKET || 'smartlearn-materials';
 
 async function uploadFile(key, buffer, mimeType) {
