@@ -1,0 +1,65 @@
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Deploy to Lightsail via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ubuntu
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/smart_learn || git clone https://github.com/${{ github.repository }}.git ~/smart_learn && cd ~/smart_learn
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Write secrets to .env
+            cat > .env << 'EOF'
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            STORAGE_PROVIDER=${{ secrets.STORAGE_PROVIDER }}
+            S3_BUCKET=${{ secrets.S3_BUCKET }}
+            S3_REGION=${{ secrets.S3_REGION }}
+            NODE_ENV=production
+            EOF
+            
+            # Rebuild and restart
+            docker compose up -d --build --remove-orphans
+            docker compose ps
+
+      - name: Health Check
+        run: |
+          sleep 12
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.LIGHTSAIL_HOST }}/api/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ Health check passed ($STATUS)"
+              exit 0
+            fi
+            echo "⏳ Attempt $i: status=$STATUS, retrying..."
+            sleep 5
+          done
+          echo "❌ Health check failed after 5 attempts"
+          exit 1
