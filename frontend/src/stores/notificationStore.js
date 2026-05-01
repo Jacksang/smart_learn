@@ -17,7 +17,9 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.getNotifications(params);
-      notifications.value = Array.isArray(r.data) ? r.data : (r.data.notifications || []);
+      const body = r.data;
+      const data = body.success ? body.data : body;
+      notifications.value = Array.isArray(data) ? data : (data.notifications || []);
       return notifications.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch notifications';
@@ -31,11 +33,13 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.markRead(id);
+      const body = r.data;
+      const data = body.success ? body.data : body;
       const idx = notifications.value.findIndex(n => n.id === id);
       if (idx !== -1) {
-        notifications.value[idx] = { ...notifications.value[idx], is_read: true, ...r.data };
+        notifications.value[idx] = { ...notifications.value[idx], is_read: true, ...data };
       }
-      return r.data;
+      return data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to mark notification as read';
       throw e;
@@ -46,8 +50,10 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.markAllRead();
+      const body = r.data;
+      const data = body.success ? body.data : body;
       notifications.value = notifications.value.map(n => ({ ...n, is_read: true }));
-      return r.data;
+      return data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to mark all notifications as read';
       throw e;
@@ -58,8 +64,10 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.deleteNotification(id);
+      const body = r.data;
+      const data = body.success ? body.data : body;
       notifications.value = notifications.value.filter(n => n.id !== id);
-      return r.data;
+      return data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to delete notification';
       throw e;
@@ -71,8 +79,10 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.deleteAll(params);
+      const body = r.data;
+      const data = body.success ? body.data : body;
       notifications.value = [];
-      return r.data;
+      return data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to clear notifications';
       throw e;
@@ -86,7 +96,9 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.getPreferences();
-      preferences.value = r.data;
+      const body = r.data;
+      const data = body.success ? body.data : body;
+      preferences.value = data.preferences || data;
       return preferences.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch notification preferences';
@@ -101,8 +113,10 @@ export const useNotificationStore = defineStore('notification', () => {
     error.value = null;
     try {
       const r = await notificationService.updatePreferences(data);
-      preferences.value = r.data;
-      return r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      preferences.value = unwrapped.preferences || unwrapped;
+      return unwrapped;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update notification preferences';
       throw e;

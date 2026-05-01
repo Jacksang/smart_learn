@@ -19,7 +19,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.createSession(projectId, data);
-      currentSession.value = r.data.session || r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      currentSession.value = unwrapped.session || unwrapped;
       progress.value = 0;
       summary.value = null;
       return currentSession.value;
@@ -36,7 +38,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.pauseSession(projectId, sessionId, reason);
-      currentSession.value = r.data.session || r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      currentSession.value = unwrapped.session || unwrapped;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to pause session';
@@ -51,7 +55,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.resumeSession(projectId, sessionId);
-      currentSession.value = r.data.session || r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      currentSession.value = unwrapped.session || unwrapped;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to resume session';
@@ -66,8 +72,10 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.endSession(projectId, sessionId);
-      summary.value = r.data.summary || r.data;
-      currentSession.value = r.data.session || r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      summary.value = unwrapped.summary || unwrapped;
+      currentSession.value = unwrapped.session || unwrapped;
       return summary.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to end session';
@@ -81,7 +89,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.updateProgress(projectId, sessionId, data);
-      const p = r.data.progress ?? r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      const p = unwrapped.progress ?? unwrapped;
       progress.value = typeof p === 'object' ? (p.currentProgress ?? p.value ?? 0) : p;
       return progress.value;
     } catch (e) {
@@ -95,7 +105,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getProgress(projectId, sessionId);
-      const p = r.data.progress ?? r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      const p = unwrapped.progress ?? unwrapped;
       progress.value = typeof p === 'object' ? (p.currentProgress ?? p.value ?? 0) : p;
       return progress.value;
     } catch (e) {
@@ -111,8 +123,10 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.switchMode(projectId, sessionId, newMode, reason);
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
       mode.value = newMode;
-      currentSession.value = r.data.session || r.data;
+      currentSession.value = unwrapped.session || unwrapped;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to switch mode';
@@ -127,7 +141,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getModeHistory(projectId, sessionId);
-      modeHistory.value = Array.isArray(r.data) ? r.data : (r.data.modeHistory || r.data.history || []);
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      modeHistory.value = Array.isArray(unwrapped) ? unwrapped : (unwrapped.modeHistory || unwrapped.history || []);
       return modeHistory.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch mode history';
@@ -142,7 +158,9 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getCurrentSession(projectId);
-      currentSession.value = r.data.session || r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      currentSession.value = unwrapped.session || unwrapped;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch current session';

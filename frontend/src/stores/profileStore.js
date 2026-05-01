@@ -14,7 +14,9 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.getProfile();
-      profile.value = r.data.user || r.data;
+      const body = r.data;
+      const data = body.success ? body.data : body;
+      profile.value = data.user || data;
       return profile.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch profile';
@@ -29,8 +31,10 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.updateProfile(data);
-      profile.value = r.data;
-      return r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      profile.value = unwrapped.user || unwrapped;
+      return unwrapped;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update profile';
       throw e;
@@ -44,10 +48,12 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.uploadAvatar(file);
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
       if (profile.value) {
-        profile.value.avatar = r.data.avatar || r.data.url;
+        profile.value.avatarUrl = unwrapped.avatarUrl || unwrapped.url;
       }
-      return r.data;
+      return unwrapped;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to upload avatar';
       throw e;
@@ -61,7 +67,8 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.changePassword(data);
-      return r.data;
+      const body = r.data;
+      return body.success ? body.data : body;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to change password';
       throw e;
@@ -75,7 +82,9 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.getSubscription();
-      subscription.value = r.data.subscription || r.data;
+      const body = r.data;
+      const data = body.success ? body.data : body;
+      subscription.value = data.subscription || data;
       return subscription.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch subscription';
@@ -90,8 +99,10 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.updateLearningPrefs(data);
-      preferences.value = r.data.learningPreferences || r.data;
-      return r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      preferences.value = unwrapped.learningPreferences || unwrapped;
+      return unwrapped;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update learning preferences';
       throw e;
@@ -105,8 +116,10 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.updateNotifPrefs(data);
-      preferences.value = r.data.notificationPreferences || r.data;
-      return r.data;
+      const body = r.data;
+      const unwrapped = body.success ? body.data : body;
+      preferences.value = unwrapped.notificationPreferences || unwrapped;
+      return unwrapped;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update notification preferences';
       throw e;

@@ -16,16 +16,9 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: auto-unwrap + handle 401
+// Response interceptor: handle 401 only (no auto-unwrap, stores handle their own response parsing)
 apiClient.interceptors.response.use(
-  (response) => {
-    // Auto-unwrap { success: true, data: ... } API responses
-    const body = response.data;
-    if (body && typeof body === 'object' && body.success === true && 'data' in body) {
-      response.data = body.data;
-    }
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('auth_token');
