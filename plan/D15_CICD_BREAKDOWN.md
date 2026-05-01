@@ -81,7 +81,7 @@ jobs:
 Create `plan/D15_AWS_SETUP_GUIDE.md` with:
 
 ### Section 1: What You Need to Create in AWS
-- Lightsail instance (ap-southeast-1a, Ubuntu 22.04, $10/mo medium)
+- Lightsail instance (ap-southeast-1a, Ubuntu 22.04, $5/mo small)
 - Static IP attached
 - S3 bucket (smartlearn-materials-{accountId}, ap-southeast-1, block public access)
 - IAM user for GitHub Actions with policy:
@@ -110,7 +110,7 @@ aws lightsail create-instances \
   --instance-name smartlearn \
   --availability-zone ap-southeast-1a \
   --blueprint-id ubuntu_22_04 \
-  --bundle-id medium_1_0
+  --bundle-id small_1_0
 
 # Create static IP and attach
 aws lightsail allocate-static-ip --static-ip-name smartlearn-ip

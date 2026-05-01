@@ -11,9 +11,9 @@ aws lightsail create-instances \
   --instance-name smartlearn \
   --availability-zone ap-southeast-1a \
   --blueprint-id ubuntu_22_04 \
-  --bundle-id medium_1_0
+  --bundle-id small_1_0
 ```
-This creates a 2GB RAM VM. Cost: $10/month. Note the public IP from the output.
+This creates a 1GB RAM VM. Cost: $5/month. Note the public IP from the output.
 
 ## Step 2: Create and Attach Static IP
 
@@ -207,8 +207,8 @@ aws iam create-access-key --user-name smartlearn-s3
 
 | Resource | Cost |
 |----------|------|
-| Lightsail VM (2GB) | $10.00 |
+| Lightsail VM (1GB) | $5.00 |
 | Static IP | Free |
 | S3 (materials, optional) | ~$0.01 |
 | Route 53 (domain, optional) | $0.50 |
-| **TOTAL** | **$10.50/mo** |
+| **TOTAL** | **$5.50/mo** |

@@ -20,7 +20,7 @@
 
 ## 🔴 The Local Storage Problem
 
-**Lightsail $10/mo (2GB RAM, 80GB SSD):**
+**Lightsail $5/mo (1GB RAM, 40GB SSD):**
 
 | What consumes SSD | Space |
 |-------------------|-------|
@@ -63,7 +63,7 @@ S3 at our scale is practically free:
               ┌──────────┘       └──────────┐
               ▼                             ▼
     ┌─────────────────┐           ┌─────────────────┐
-    │   S3 Bucket      │           │   Lightsail $10  │
+    │   S3 Bucket      │           │   Lightsail $5   │
     │   (materials)    │           │   (app + DB)     │
     │                  │           │                  │
     │ /textbooks/      │           │ Node.js backend  │
@@ -71,7 +71,7 @@ S3 at our scale is practically free:
     │ /video/          │  presign  │ generates URLs    │
     │ /images/         │           │                  │
     │                  │           │ PostgreSQL meta   │
-    │ $0.01/mo (5usr)  │           │ $10/mo           │
+    │ $0.01/mo (5usr)  │           │ $5/mo            │
     └─────────────────┘           └─────────────────┘
 ```
 
@@ -179,9 +179,9 @@ smartlearn-materials/
 
 | Students | App VM | DB | S3 Storage | S3 Transfer | **Total** |
 |----------|--------|----|-----------|-------------|-----------|
-| 5 | $10 | — | $0.01 | $0.00 | **$10.01** |
-| 50 | $10 | — | $0.06 | $0.01 | **$10.07** |
-| 200 | $10 | $15 | $0.35 | $0.10 | **$25.45** |
+| 5 | $5 | — | $0.01 | $0.00 | **$5.01** |
+| 50 | $5 | — | $0.06 | $0.01 | **$5.07** |
+| 200 | $5 | $15 | $0.35 | $0.10 | **$20.45** |
 | 500 | $20×2 | $30 | $1.15 | $0.50 | **$71.65** |
 | 1,000 | $40×2 | $90 | $2.30 | $1.00 | **$173.30** |
 
@@ -198,7 +198,7 @@ smartlearn-materials/
 | Cost now | $0.01/mo — free |
 | Code change | ~80 lines, 1 new file |
 | Migration pain avoided | Priceless — moving 50GB+ later is a nightmare |
-| Lightsail stays small | $10/mo VM, not $40/mo for bigger disk |
+| Lightsail stays small | $5/mo VM, not $40/mo for bigger disk |
 | Automatic backups | S3 has 99.999999999% durability |
 | Future CDN ready | Add CloudFront with one checkbox |
 | Lifecycle policies | Auto-archive old files to cheaper storage |

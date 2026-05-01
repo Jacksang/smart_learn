@@ -30,29 +30,27 @@
 
 ---
 
-## 🔄 Phase 1: Single VM (1-50 Students) → $10/mo
+## 🔄 Phase 1: Single VM (1-50 Students) → $5/mo
 
 ```
 ┌──────────────────────────────────────────┐
-│       Lightsail $10/mo (2GB RAM)         │
+│       Lightsail $5/mo (1GB RAM)          │
 │                                           │
 │   docker compose up -d                    │
 │   ├── Nginx (frontend)                    │
-│   ├── Node.js (backend, pool: 20)         │
-│   └── PostgreSQL (max_conn: 50)           │
-│                                           │
-│   + pgbouncer (connection pooling)        │
+│   ├── Node.js (backend, pool: 10)         │
+│   └── PostgreSQL (max_conn: 30)           │
 └──────────────────────────────────────────┘
 ```
 
 | Component | Cost |
 |-----------|------|
-| Lightsail 2GB VM | $10/mo |
+| Lightsail 1GB VM | $5/mo |
 | Static IP | Free |
-| Backup snapshots | $2/mo |
-| **TOTAL** | **$12/mo** |
+| Backup snapshots | $1/mo |
+| **TOTAL** | **$6/mo** |
 
-**Why $10 instead of $5:** 2GB RAM gives PostgreSQL breathing room for 40+ concurrent students plus connection pooling overhead.
+**Why $5 is enough for 3-50 students:** At 50 concurrent students, PostgreSQL needs ~30 connections (30 × 5MB = 150MB RAM). Node.js uses ~200MB. Total ~500MB. 1GB is comfortable with 500MB headroom.
 
 ---
 
@@ -159,9 +157,9 @@ $100 ┤                                    ████
      │            ████        ████ (2 VMs + LB)
  $30 ┤            ████        ████
      │  ████      ████        ████
- $12 ┤  ████      ████        ████
-     │  ████      ████        ████
-  $0 └──████──────████────────████────────████──
+  $6 ┤  ██        ████        ████
+     │  ██        ████        ████
+  $0 └──██────────████────────████────────████──
        Phase 1   Phase 2     Phase 3    Phase 4
        5-50      50-200      200-500    500-1000+
 ```
@@ -172,8 +170,8 @@ $100 ┤                                    ████
 
 | Phase | Students | Monthly Cost | **Cost/Student** |
 |-------|----------|-------------|-----------------|
-| 1 | 10 | $12 | **$1.20** |
-| 1 | 50 | $12 | **$0.24** |
+| 1 | 10 | $6 | **$0.60** |
+| 1 | 50 | $6 | **$0.12** |
 | 2 | 100 | $25 | **$0.25** |
 | 2 | 200 | $25 | **$0.13** |
 | 3 | 300 | $68 | **$0.23** |
@@ -189,7 +187,7 @@ $100 ┤                                    ████
 ### 1. Docker Everywhere = Zero Lock-in
 ```yaml
 # Same docker-compose.yml works on:
-# - Lightsail ($10), Hetzner ($4), DigitalOcean ($6)
+# - Lightsail ($5), Hetzner ($4), DigitalOcean ($6)
 # - Your own server ($0)
 # - Any cloud VM
 ```
@@ -225,17 +223,17 @@ Everything else is stateless Docker containers. Replace any VM without losing da
 ## 🚀 Recommended Starting Point
 
 ```bash
-# Phase 1: Lightsail $10/mo, deploy this week
+# Phase 1: Lightsail $5/mo, deploy this week
 aws lightsail create-instances \
   --instance-name smartlearn \
   --availability-zone ap-southeast-1a \
   --blueprint-id ubuntu_22_04 \
-  --bundle-id medium_1_0    # 2GB RAM, $10/mo
+  --bundle-id small_1_0    # 1GB RAM, $5/mo
 
 # Same docker-compose.yml scales from Phase 1 through Phase 3
 # with zero changes. Only environment variables change.
 ```
 
-**Phase 1 at $10/mo gives you headroom to ~50 students.** That's probably 6-12 months of runway before needing Phase 2.
+**Phase 1 at $5/mo gives you headroom to ~50 students.** That's probably 6-12 months of runway before needing Phase 2.
 
 Want me to create all the Docker files and deployment scripts now?
