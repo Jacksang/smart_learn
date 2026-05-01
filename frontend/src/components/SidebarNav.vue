@@ -1,18 +1,20 @@
 <script setup>
+import { computed } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
+import { useAuthStore } from '../stores/authStore';
 import BaseAvatar from './BaseAvatar.vue';
 
 const route = useRoute();
+const authStore = useAuthStore();
+const userName = computed(() => authStore.user?.display_name || authStore.user?.name || 'User');
 
 const navItems = [
-  { to: '/dashboard', icon: '📊', label: 'Dashboard' },
+  { to: '/', icon: '📊', label: 'Dashboard' },
   { to: '/learn', icon: '📖', label: 'Learn' },
   { to: '/analytics', icon: '📈', label: 'Analytics' },
   { to: '/weak-areas', icon: '🎯', label: 'Weak Areas' },
   { to: '/profile', icon: '👤', label: 'Profile' },
 ];
-
-const userName = 'Alex Chen';
 </script>
 
 <template>

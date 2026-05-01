@@ -1,5 +1,10 @@
 <script setup>
+import { computed } from 'vue';
+import { useAuthStore } from '../stores/authStore';
 import BaseAvatar from './BaseAvatar.vue';
+
+const authStore = useAuthStore();
+const userName = computed(() => authStore.user?.display_name || authStore.user?.name || 'User');
 
 defineProps({
   unreadCount: {
@@ -7,8 +12,6 @@ defineProps({
     default: 0,
   },
 });
-
-const userName = 'Alex Chen';
 </script>
 
 <template>
