@@ -43,7 +43,7 @@ defineEmits(['update:modelValue']);
         :disabled="disabled"
         class="input-field"
         :class="{ 'has-prepend': $slots.prepend, 'has-append': $slots.append }"
-        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="$emit('update:modelValue', $event.target.value)"
       />
       <span v-if="$slots.append" class="input-addon input-addon--append">
         <slot name="append" />
