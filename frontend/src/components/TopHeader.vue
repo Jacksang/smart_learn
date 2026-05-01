@@ -1,10 +1,25 @@
 <script setup>
 import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 import BaseAvatar from './BaseAvatar.vue';
 
+const route = useRoute();
 const authStore = useAuthStore();
 const userName = computed(() => authStore.user?.display_name || authStore.user?.name || 'User');
+
+const pageTitle = computed(() => {
+  const name = route.name;
+  const titles = {
+    dashboard: 'Dashboard',
+    learn: 'Learning Session',
+    quiz: 'Quiz',
+    profile: 'Profile',
+    analytics: 'Analytics',
+    'weak-areas': 'Weak Areas',
+  };
+  return titles[name] || 'Smart Learn';
+});
 
 defineProps({
   unreadCount: {
@@ -17,7 +32,7 @@ defineProps({
 <template>
   <header class="top-header">
     <div class="header-left">
-      <h2 class="breadcrumb">Dashboard</h2>
+      <h2 class="breadcrumb">{{ pageTitle }}</h2>
     </div>
 
     <div class="header-right">
