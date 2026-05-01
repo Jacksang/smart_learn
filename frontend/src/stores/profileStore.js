@@ -14,7 +14,7 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.getProfile();
-      profile.value = r.data;
+      profile.value = r.data.user || r.data;
       return profile.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch profile';
@@ -75,7 +75,7 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.getSubscription();
-      subscription.value = r.data.subscription;
+      subscription.value = r.data.subscription || r.data;
       return subscription.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch subscription';
@@ -90,7 +90,7 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.updateLearningPrefs(data);
-      preferences.value = r.data;
+      preferences.value = r.data.learningPreferences || r.data;
       return r.data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update learning preferences';
@@ -105,7 +105,7 @@ export const useProfileStore = defineStore('profile', () => {
     error.value = null;
     try {
       const r = await profileService.updateNotifPrefs(data);
-      preferences.value = r.data;
+      preferences.value = r.data.notificationPreferences || r.data;
       return r.data;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update notification preferences';

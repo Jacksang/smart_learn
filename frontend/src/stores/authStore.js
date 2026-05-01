@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
     try {
       const res = await authService.getProfile();
-      user.value = res.data;
+      user.value = res.data.user || res.data;
       return user.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch profile';

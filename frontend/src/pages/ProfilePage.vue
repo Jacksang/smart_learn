@@ -75,14 +75,14 @@ onMounted(() => {
       <div class="profile-header">
         <div class="avatar-section">
           <BaseAvatar
-            :name="profile?.display_name || authStore.user?.display_name || 'User'"
+            :name="profile?.displayName || authStore.user?.name || 'User'"
             size="xl"
-            :src="profile?.avatar_url || authStore.user?.avatar_url"
+            :src="profile?.avatarUrl || authStore.user?.avatarUrl"
           />
           <BaseButton variant="ghost" size="sm" @click="editAvatar">📷</BaseButton>
         </div>
         <div class="profile-info">
-          <h2>{{ profile?.display_name || authStore.user?.display_name || 'User' }}</h2>
+          <h2>{{ profile?.displayName || authStore.user?.name || 'User' }}</h2>
           <p class="profile-email">{{ profile?.email || authStore.user?.email || 'No email set' }}</p>
           <p class="profile-bio">{{ profile?.bio || 'No bio yet — tell us about yourself!' }}</p>
           <div class="profile-actions">

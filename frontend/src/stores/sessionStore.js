@@ -19,7 +19,7 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.createSession(projectId, data);
-      currentSession.value = r.data;
+      currentSession.value = r.data.session || r.data;
       progress.value = 0;
       summary.value = null;
       return currentSession.value;
@@ -36,7 +36,7 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.pauseSession(projectId, sessionId, reason);
-      currentSession.value = r.data;
+      currentSession.value = r.data.session || r.data;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to pause session';
@@ -51,7 +51,7 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.resumeSession(projectId, sessionId);
-      currentSession.value = r.data;
+      currentSession.value = r.data.session || r.data;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to resume session';
@@ -81,7 +81,8 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.updateProgress(projectId, sessionId, data);
-      progress.value = r.data.progress ?? r.data.percentage ?? r.data;
+      const p = r.data.progress ?? r.data;
+      progress.value = typeof p === 'object' ? (p.currentProgress ?? p.value ?? 0) : p;
       return progress.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to update progress';
@@ -94,7 +95,8 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getProgress(projectId, sessionId);
-      progress.value = r.data.progress ?? r.data.percentage ?? r.data;
+      const p = r.data.progress ?? r.data;
+      progress.value = typeof p === 'object' ? (p.currentProgress ?? p.value ?? 0) : p;
       return progress.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch progress';
@@ -110,7 +112,7 @@ export const useSessionStore = defineStore('session', () => {
     try {
       const r = await sessionService.switchMode(projectId, sessionId, newMode, reason);
       mode.value = newMode;
-      currentSession.value = r.data;
+      currentSession.value = r.data.session || r.data;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to switch mode';
@@ -125,7 +127,7 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getModeHistory(projectId, sessionId);
-      modeHistory.value = Array.isArray(r.data) ? r.data : (r.data.history || []);
+      modeHistory.value = Array.isArray(r.data) ? r.data : (r.data.modeHistory || r.data.history || []);
       return modeHistory.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch mode history';
@@ -140,7 +142,7 @@ export const useSessionStore = defineStore('session', () => {
     error.value = null;
     try {
       const r = await sessionService.getCurrentSession(projectId);
-      currentSession.value = r.data;
+      currentSession.value = r.data.session || r.data;
       return currentSession.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch current session';

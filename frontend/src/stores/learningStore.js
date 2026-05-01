@@ -32,7 +32,7 @@ export const useLearningStore = defineStore('learning', () => {
     error.value = null;
     try {
       const r = await learningService.getProject(id);
-      currentProject.value = r.data;
+      currentProject.value = r.data.project || r.data;
       return currentProject.value;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to fetch project';
@@ -47,8 +47,9 @@ export const useLearningStore = defineStore('learning', () => {
     error.value = null;
     try {
       const r = await learningService.createProject(data);
-      projects.value.push(r.data);
-      return r.data;
+      const project = r.data.project || r.data;
+      projects.value.push(project);
+      return project;
     } catch (e) {
       error.value = e.response?.data?.message || 'Failed to create project';
       throw e;

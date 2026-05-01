@@ -67,7 +67,7 @@ async function createForProjectAndUser({ projectId, userId, mode, status = 'acti
        $7,
        $8::jsonb
      FROM owned_project op
-     RETURNING ${SESSION_SELECT}`,
+     RETURNING *`,
     [
       projectId,
       userId,
@@ -379,7 +379,7 @@ async function updateSessionState({ sessionId, projectId, userId, updates = {} }
      WHERE s.id = $1
        AND s.project_id = op.id
        AND s.user_id = $3
-     RETURNING ${SESSION_SELECT}`,
+     RETURNING *`,
     params
   );
 
