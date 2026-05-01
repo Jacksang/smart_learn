@@ -9,7 +9,7 @@ import TopHeader from '../components/TopHeader.vue';
     <div class="app-main">
       <TopHeader />
       <main class="app-content">
-        <slot />
+        <router-view />
       </main>
     </div>
   </div>
