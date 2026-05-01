@@ -17,8 +17,7 @@ const routes = [
   {
     path: '/login',
     name: 'login',
-    // Simple login placeholder - just a div with "Login Page" text
-    component: { template: '<div class="login-page" style="display:flex;align-items:center;justify-content:center;height:100vh"><h1>Smart Learn Login</h1></div>' },
+    component: () => import('../pages/LoginPage.vue'),
   },
 ];
 
