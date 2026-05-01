@@ -22,13 +22,17 @@ const { promisify } = require('util');
 const pipeline = promisify(require('stream').pipeline);
 
 const db = require('../../config/database');
+
+// Basic user functions from the core repository
 const {
   findById,
   findByEmail,
+} = require('./repository');
+
+// Profile management functions from the profile repository
+const {
   updateProfile,
   updatePreferences,
-  updateSubscription,
-  touchLastActive,
   changePassword,
   getNotificationPreferences,
   createNotificationPreferences,
@@ -38,7 +42,7 @@ const {
   revokeAllSessions,
   updateDataExport,
   getUserSubscriptions,
-} = require('./repository');
+} = require('./profile-repository');
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 

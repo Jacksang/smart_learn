@@ -110,8 +110,7 @@ async function updatePreferences(userId, type, preferences) {
       weekly_summary: 'weekly_summary',
       streak_reminders: 'streak_reminders',
       achievement_notifications: 'achievement_notifications',
-      learning_tips: 'learning_tips',
-      marketing_emails: 'marketing_emails'
+      learning_tips: 'learning_tips'
     };
     
     for (const [key, dbField] of Object.entries(preferences)) {
@@ -138,7 +137,7 @@ async function updatePreferences(userId, type, preferences) {
         SET ${setClauses.join(', ')}
         WHERE id = $${index}
         RETURNING email_notifications, push_notifications, weekly_summary, 
-                  streak_reminders, achievement_notifications, learning_tips, marketing_emails, updated_at
+                  streak_reminders, achievement_notifications, learning_tips, updated_at
       `;
       
       const result = await db.query(query, values);
@@ -150,12 +149,12 @@ async function updatePreferences(userId, type, preferences) {
         INSERT INTO notification_preferences (${setClauses.map((_, i) => {
           const keys = Object.keys(preferences);
           const fields = ['email_notifications', 'push_notifications', 'weekly_summary', 
-                         'streak_reminders', 'achievement_notifications', 'learning_tips', 'marketing_emails', 'user_id'];
+                         'streak_reminders', 'achievement_notifications', 'learning_tips', 'user_id'];
           return fields[i];
         }).join(', ')})
         VALUES (${setClauses.map(() => `$${index}`).join(', ')})
         RETURNING email_notifications, push_notifications, weekly_summary, 
-                  streak_reminders, achievement_notifications, learning_tips, marketing_emails, created_at
+                  streak_reminders, achievement_notifications, learning_tips, created_at
       `;
       
       const result = await db.query(query, values);
@@ -192,7 +191,7 @@ async function changePassword(userId, newPassword) {
 async function getNotificationPreferences(userId) {
   const query = `
     SELECT email_notifications, push_notifications, weekly_summary, 
-           streak_reminders, achievement_notifications, learning_tips, marketing_emails, updated_at
+           streak_reminders, achievement_notifications, learning_tips, updated_at
     FROM notification_preferences
     WHERE user_id = $1
   `;
@@ -208,10 +207,10 @@ async function createNotificationPreferences(userId) {
   const query = `
     INSERT INTO notification_preferences (
       user_id, email_notifications, push_notifications, weekly_summary, 
-      streak_reminders, achievement_notifications, learning_tips, marketing_emails
+      streak_reminders, achievement_notifications, learning_tips
     ) VALUES ($1, true, false, true, true, true, true, false)
     RETURNING id, user_id, email_notifications, push_notifications, weekly_summary, 
-              streak_reminders, achievement_notifications, learning_tips, marketing_emails, created_at
+              streak_reminders, achievement_notifications, learning_tips, created_at
   `;
   
   const result = await db.query(query, [userId]);
